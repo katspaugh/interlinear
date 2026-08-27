@@ -8,10 +8,16 @@ services:
   - name: web
     dockerfile_path: Dockerfile
     source_dir: /
-    github:
-      repo: katspaugh/interlinear.io
+    # Public clone URL — works without linking GitHub to DigitalOcean, but
+    # deploys must be triggered manually (doctl apps create-deployment <id>).
+    # To get deploy-on-push, authorize the DO GitHub app and replace with:
+    #   github:
+    #     repo: katspaugh/interlinear.io
+    #     branch: main
+    #     deploy_on_push: true
+    git:
+      repo_clone_url: https://github.com/katspaugh/interlinear.io.git
       branch: main
-      deploy_on_push: true
     http_port: 8080
     instance_count: 1
     instance_size_slug: basic-xxs
