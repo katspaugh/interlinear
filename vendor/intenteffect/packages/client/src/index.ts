@@ -36,10 +36,19 @@ export interface ClientConfig {
   /** Transport-level retries for send(); safe because intentId is idempotent. */
   sendRetries?: number
   reconnectDelayMs?: number
+  /**
+   * Extra headers for send/projection requests (e.g. an auth token the
+   * server's `context` hook reads). A function is re-evaluated per request,
+   * for tokens that appear or rotate at runtime. Note: the SSE /events
+   * connection cannot carry custom headers (browser EventSource limitation) —
+   * authenticate it with cookies or a query-param ticket instead.
+   */
+  headers?: HeadersInit | (() => HeadersInit)
 }
 
 export interface SendOptions {
-  /** Supply your own id to make retries across page loads idempotent. */
+  /** Supply your own id (must be a UUID — it doubles as the store's primary
+   *  key) to make retries across page loads idempotent. */
   intentId?: string
   correlationId?: string
 }
@@ -57,6 +66,7 @@ export class IntentEffectClient {
   private readonly basePath: string
   private readonly fetchImpl: typeof fetch
   private readonly sendRetries: number
+  private readonly headers?: HeadersInit | (() => HeadersInit)
   private readonly projectionStores = new Map<
     string,
     { store: ProjectionStore<unknown>; disposeTimer: ReturnType<typeof setTimeout> | null }
@@ -67,6 +77,7 @@ export class IntentEffectClient {
     this.basePath = config.basePath ?? DEFAULT_BASE_PATH
     this.fetchImpl = config.fetchImpl ?? ((...args) => fetch(...args))
     this.sendRetries = config.sendRetries ?? 2
+    this.headers = config.headers
     this.bus = new EventBus({
       baseUrl: this.baseUrl,
       basePath: this.basePath,
@@ -120,14 +131,25 @@ export class IntentEffectClient {
     contract: P,
     params: unknown = {},
   ): ProjectionHandle<ProjectionResult<P>> {
-    const key = `${contract.name}:${stableStringify(params)}`
+    // Parse params through the contract schema so reducers see the same
+    // defaults/coercions as the server-side snapshot query, and so
+    // equivalent params (e.g. {} vs an explicit default) share one store.
+    const parsedParams = validate(contract.params, params, `projection "${contract.name}" params`)
+    const effectiveParams = parsedParams.ok ? parsedParams.value : params
+    const key = `${contract.name}:${stableStringify(effectiveParams)}`
     let entry = this.projectionStores.get(key)
     if (!entry) {
       const store = new ProjectionStore<ProjectionResult<P>>(
         contract,
-        params,
+        effectiveParams,
         this.bus,
-        () => this.postJson<ProjectionOk>(PROJECTION_PATH, { name: contract.name, params }),
+        () =>
+          parsedParams.ok
+            ? this.postJson<ProjectionOk>(PROJECTION_PATH, {
+                name: contract.name,
+                params: effectiveParams,
+              })
+            : Promise.resolve(parsedParams),
       )
       entry = { store: store as ProjectionStore<unknown>, disposeTimer: null }
       this.projectionStores.set(key, entry)
@@ -203,9 +225,13 @@ export class IntentEffectClient {
   ): Promise<Result<T, IntentEffectError>> {
     let response: Response
     try {
+      const headers = new Headers(
+        typeof this.headers === 'function' ? this.headers() : this.headers,
+      )
+      headers.set('content-type', 'application/json')
       response = await this.fetchImpl(`${this.baseUrl}${this.basePath}${path}`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers,
         body: JSON.stringify(body),
       })
     } catch (cause) {

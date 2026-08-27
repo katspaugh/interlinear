@@ -88,6 +88,8 @@ export class PostgresStore implements EventStore {
   private readonly pollIntervalMs: number
   private listenClient: pg.Client | null = null
   private listenStopped = false
+  private pollTimer: ReturnType<typeof setInterval> | null = null
+  private readonly wakeSubscribers = new Set<() => void>()
 
   constructor(private readonly config: PostgresStoreConfig) {
     this.pool = config.pool ?? new pg.Pool({ connectionString: config.connectionString })
@@ -304,14 +306,35 @@ export class PostgresStore implements EventStore {
    * Wake-up signaling: LISTEN on the notify channel plus a low-frequency
    * poll as a safety net. Never delivers events itself — subscribers re-read
    * the event table from their cursor.
+   *
+   * Multi-consumer: any number of subscribers (the server's event hub, app
+   * background workers, ...) share one LISTEN connection and one poll timer,
+   * created for the first subscriber and torn down with the last.
    */
   subscribe(onWake: () => void): () => void {
+    this.wakeSubscribers.add(onWake)
+    if (this.wakeSubscribers.size === 1) {
+      this.startListening()
+    } else {
+      onWake() // late subscriber: catch anything committed before it arrived
+    }
+    return () => {
+      if (!this.wakeSubscribers.delete(onWake)) return
+      if (this.wakeSubscribers.size === 0) this.stopListening()
+    }
+  }
+
+  private notifyAll(): void {
+    for (const onWake of [...this.wakeSubscribers]) onWake()
+  }
+
+  private startListening(): void {
     this.listenStopped = false
     const connectListener = async (): Promise<void> => {
       if (this.listenStopped) return
       const client = new pg.Client({ connectionString: this.config.connectionString })
       this.listenClient = client
-      client.on('notification', () => onWake())
+      client.on('notification', () => this.notifyAll())
       client.on('error', () => {
         void client.end().catch(() => {})
         if (!this.listenStopped) setTimeout(() => void connectListener(), 1000)
@@ -319,27 +342,27 @@ export class PostgresStore implements EventStore {
       try {
         await client.connect()
         await client.query(`listen "${this.channel.replaceAll('"', '""')}"`)
-        onWake() // catch anything committed while (re)connecting
+        this.notifyAll() // catch anything committed while (re)connecting
       } catch {
         void client.end().catch(() => {})
         if (!this.listenStopped) setTimeout(() => void connectListener(), 1000)
       }
     }
     void connectListener()
+    this.pollTimer = setInterval(() => this.notifyAll(), this.pollIntervalMs)
+  }
 
-    const poll = setInterval(onWake, this.pollIntervalMs)
-    return () => {
-      this.listenStopped = true
-      clearInterval(poll)
-      void this.listenClient?.end().catch(() => {})
-      this.listenClient = null
-    }
+  private stopListening(): void {
+    this.listenStopped = true
+    if (this.pollTimer) clearInterval(this.pollTimer)
+    this.pollTimer = null
+    void this.listenClient?.end().catch(() => {})
+    this.listenClient = null
   }
 
   async close(): Promise<void> {
-    this.listenStopped = true
-    await this.listenClient?.end().catch(() => {})
-    this.listenClient = null
+    this.wakeSubscribers.clear()
+    this.stopListening()
     await this.pool.end()
   }
 }

@@ -82,7 +82,10 @@ export interface ProjectionDefinition<P extends AnyProjectionContract, Ctx, Tx> 
 /* ------------------------------------------------------------------ */
 
 const sendBodySchema = z.object({
-  intentId: z.string().min(8),
+  // A UUID: it is both the idempotency key and the Postgres store's uuid
+  // primary key — accepting looser strings would fail deep in the store as
+  // an opaque store_failed instead of a validation_failed at the boundary.
+  intentId: z.uuid(),
   type: z.string(),
   input: z.unknown(),
   correlationId: z.string().optional(),

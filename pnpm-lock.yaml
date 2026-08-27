@@ -73,6 +73,25 @@ importers:
         specifier: ^4.1.0
         version: 4.4.3
 
+  vendor/intenteffect/packages/memory:
+    dependencies:
+      '@intenteffect/core':
+        specifier: workspace:*
+        version: link:../core
+      '@intenteffect/server':
+        specifier: workspace:*
+        version: link:../server
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.20.1
+      tsx:
+        specifier: ^4.19.0
+        version: 4.23.12
+      zod:
+        specifier: ^4.1.0
+        version: 4.4.3
+
   vendor/intenteffect/packages/postgres:
     dependencies:
       '@intenteffect/core':

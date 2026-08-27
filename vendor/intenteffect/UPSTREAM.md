@@ -1,7 +1,7 @@
 # Vendored: intenteffect
 
 Upstream: https://github.com/katspaugh/intenteffect
-Commit: `67df8042308c7f23e1b3bbe96fd4358d00061c19`
+Commit: `8f7609e82f3502c541a535286c55c142c1cd2bfc` (merge of PR #7)
 
 The `packages/` directory is a verbatim copy of the upstream `packages/`
 directory. The upstream packages are not published to npm (they export

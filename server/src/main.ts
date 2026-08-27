@@ -19,6 +19,10 @@ await app.start()
 
 const worker = new GlossWorker(app, store.pool)
 worker.start()
+// Wake the worker whenever new events commit (any process): text.add and
+// word.define record work the worker should pick up right away. The store's
+// subscribe() is multi-consumer, so this coexists with the server's own hub.
+store.subscribe(() => worker.kick())
 
 const serveStatic = createStaticHandler(webDist)
 
@@ -29,11 +33,6 @@ const server = http.createServer((req, res) => {
     return
   }
   if (url.startsWith('/_intenteffect')) {
-    // New gloss/definition work may have been recorded by this request —
-    // have the worker check shortly after it commits.
-    if (req.method === 'POST' && url.startsWith('/_intenteffect/send')) {
-      res.on('finish', () => worker.kick())
-    }
     app.nodeHandler(req, res)
     return
   }

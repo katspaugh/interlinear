@@ -1,7 +1,7 @@
 /**
  * The owner passphrase, remembered per browser. When present it is sent as
- * the x-admin-token header on every IntentEffect request; the server only
- * requires it for text.add / text.remove.
+ * the x-admin-token header on every IntentEffect request (via the client's
+ * `headers` option); the server only requires it for text.add / text.remove.
  */
 
 const KEY = 'interlinear.adminToken'
@@ -23,14 +23,8 @@ export function setAdminToken(token: string): void {
   }
 }
 
-/** fetch wrapper for the IntentEffect client that attaches the passphrase. */
-export function adminFetch(
-  input: RequestInfo | URL,
-  init?: RequestInit,
-): Promise<Response> {
+/** Per-request headers for the IntentEffect client. */
+export function adminHeaders(): HeadersInit {
   const token = getAdminToken()
-  if (!token) return fetch(input, init)
-  const headers = new Headers(init?.headers)
-  headers.set('x-admin-token', token)
-  return fetch(input, { ...init, headers })
+  return token ? { 'x-admin-token': token } : {}
 }
