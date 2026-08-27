@@ -6,7 +6,12 @@ import {
   type DefinitionTier,
 } from '@interlinear/shared'
 import { sendInternal, type App } from './app.js'
-import { defineWordLlm, glossChunk, llmAvailable } from './llm.js'
+import {
+  definitionsAvailable,
+  defineWordLlm,
+  glossAvailable,
+  glossChunk,
+} from './llm.js'
 
 const POLL_MS = 2_000
 const MAX_CHUNK_FAILURES = 2
@@ -103,7 +108,7 @@ export class GlossWorker {
     const chunk = pending.rows[0]
     if (!chunk) return false
 
-    if (!llmAvailable()) {
+    if (!glossAvailable()) {
       await sendInternal(this.app, markGlossFailed, {
         textId: chunk.text_id,
         error: NO_KEY_ERROR,
@@ -153,7 +158,7 @@ export class GlossWorker {
 
   private async processDefinition(row: PendingDefinition): Promise<void> {
     const { lang, word, tier, kind } = row
-    if (!llmAvailable()) {
+    if (!definitionsAvailable()) {
       await sendInternal(this.app, saveDefinition, {
         lang,
         word,

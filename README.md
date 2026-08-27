@@ -66,6 +66,17 @@ pnpm start               # production mode: server serves web/dist on :3001
 | `DATABASE_SSL`      | —                                                | `no-verify` for DO managed PG    |
 | `ADMIN_TOKEN`       | — (open when unset)                              | Owner passphrase for add/remove  |
 | `DEFINITIONS_DAILY_CAP` | `300`                                        | New dictionary entries per 24h   |
+| `GLOSS_MODEL`       | `claude-opus-5`                                  | Model used for glossing          |
+| `GLOSS_BASE_URL`    | — (Anthropic API)                                | Anthropic-compatible endpoint    |
+| `GLOSS_API_KEY`     | falls back to `ANTHROPIC_API_KEY`                | Key for the gloss endpoint       |
+| `DEFINITION_MODEL_FAST` | `claude-haiku-4-5`                           | Quick dictionary entries         |
+| `DEFINITION_MODEL_DEEP` | `claude-sonnet-5`                            | Detailed dictionary entries      |
+
+To make bulk glossing cheap, point `GLOSS_BASE_URL` at any
+Anthropic-compatible endpoint (e.g. DeepSeek's) with its `GLOSS_API_KEY` and
+`GLOSS_MODEL`. With a custom base URL the server stops using
+Anthropic-specific structured outputs and instead asks for plain JSON,
+validated locally. Definitions always use the Anthropic API.
 
 Reading is public. When `ADMIN_TOKEN` is set, adding and removing texts
 requires that passphrase (asked for in the add form / on delete, remembered

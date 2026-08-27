@@ -40,9 +40,17 @@ services:
       - key: ADMIN_TOKEN
         type: SECRET
         scope: RUN_TIME
-      - key: ANTHROPIC_MODEL
+      - key: GLOSS_MODEL
         value: claude-opus-5
         scope: RUN_TIME
+      # For cheap bulk glossing, set these to an Anthropic-compatible
+      # endpoint (e.g. DeepSeek) and its model + key:
+      # - key: GLOSS_BASE_URL
+      #   value: https://api.deepseek.com/anthropic
+      # - key: GLOSS_MODEL
+      #   value: <the provider's model id>
+      # - key: GLOSS_API_KEY
+      #   type: SECRET
 
 databases:
   - name: db

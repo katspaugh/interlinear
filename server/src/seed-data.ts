@@ -586,6 +586,625 @@ export const SEED_TEXTS: SeedText[] = [
     ],
   },
   {
+    slug: 'mangala-sutta',
+    title: 'The Discourse on Blessings',
+    origTitle: 'Maṅgala Sutta',
+    source: 'Sutta Nipāta 2.4',
+    lang: 'Pali',
+    kind: 'sutta',
+    chunks: [
+      {
+        lines: [
+          [
+            ['Bahū', 'many'],
+            ['devā', 'gods'],
+            ['manussā', 'humans'],
+            ['ca,', 'and'],
+            ['maṅgalāni', 'blessings'],
+            ['acintayuṃ;', 'have pondered'],
+          ],
+          [
+            ['Ākaṅkhamānā', 'longing for'],
+            ['sotthānaṃ,', 'well-being'],
+            ['brūhi', 'tell'],
+            ['maṅgalamuttamaṃ.', 'the highest blessing'],
+          ],
+        ],
+        translation:
+          'Many gods and humans have pondered blessings, longing for well-being: tell us the highest blessing.',
+      },
+      {
+        lines: [
+          [
+            ['Asevanā', 'not associating'],
+            ['ca', 'and'],
+            ['bālānaṃ,', 'with fools'],
+            ['paṇḍitānañca', 'and with the wise'],
+            ['sevanā;', 'associating'],
+          ],
+          [
+            ['Pūjā', 'honoring'],
+            ['ca', 'and'],
+            ['pūjaneyyānaṃ,', 'those worthy of honor'],
+            ['etaṃ', 'this is'],
+            ['maṅgalamuttamaṃ.', 'the highest blessing'],
+          ],
+        ],
+        translation:
+          'Not to associate with fools, to associate with the wise, and to honor those worthy of honor — this is the highest blessing.',
+      },
+      {
+        lines: [
+          [
+            ['Patirūpadesavāso', 'living in a suitable place'],
+            ['ca,', 'and'],
+            ['pubbe', 'in the past'],
+            ['ca', 'and'],
+            ['katapuññatā;', 'having made merit'],
+          ],
+          [
+            ['Attasammāpaṇidhi', 'right direction of oneself'],
+            ['ca,', 'and'],
+            ['etaṃ', 'this is'],
+            ['maṅgalamuttamaṃ.', 'the highest blessing'],
+          ],
+        ],
+        translation:
+          'Living in a suitable place, merit made in the past, and setting oneself in the right direction — this is the highest blessing.',
+      },
+      {
+        lines: [
+          [
+            ['Bāhusaccañca', 'and great learning'],
+            ['sippañca,', 'and craft'],
+            ['vinayo', 'discipline'],
+            ['ca', 'and'],
+            ['susikkhito;', 'well-trained'],
+          ],
+          [
+            ['Subhāsitā', 'well-spoken'],
+            ['ca', 'and'],
+            ['yā', 'whatever'],
+            ['vācā,', 'speech'],
+            ['etaṃ', 'this is'],
+            ['maṅgalamuttamaṃ.', 'the highest blessing'],
+          ],
+        ],
+        translation:
+          'Great learning and skill in a craft, discipline well trained, and whatever speech is well spoken — this is the highest blessing.',
+      },
+      {
+        lines: [
+          [
+            ['Mātāpitu', 'of mother and father'],
+            ['upaṭṭhānaṃ,', 'the support'],
+            ['puttadārassa', 'of wife and children'],
+            ['saṅgaho;', 'the care'],
+          ],
+          [
+            ['Anākulā', 'untangled'],
+            ['ca', 'and'],
+            ['kammantā,', 'works'],
+            ['etaṃ', 'this is'],
+            ['maṅgalamuttamaṃ.', 'the highest blessing'],
+          ],
+        ],
+        translation:
+          'Support for mother and father, care of wife and children, and occupations free of conflict — this is the highest blessing.',
+      },
+      {
+        lines: [
+          [
+            ['Dānañca', 'and giving'],
+            ['dhammacariyā', 'living by the Dhamma'],
+            ['ca,', 'and'],
+            ['ñātakānañca', 'and of relatives'],
+            ['saṅgaho;', 'the care'],
+          ],
+          [
+            ['Anavajjāni', 'blameless'],
+            ['kammāni,', 'deeds'],
+            ['etaṃ', 'this is'],
+            ['maṅgalamuttamaṃ.', 'the highest blessing'],
+          ],
+        ],
+        translation:
+          'Giving, living by the Dhamma, care of relatives, and blameless deeds — this is the highest blessing.',
+      },
+      {
+        lines: [
+          [
+            ['Āratī', 'shrinking away'],
+            ['viratī', 'abstaining'],
+            ['pāpā,', 'from evil'],
+            ['majjapānā', 'from strong drink'],
+            ['ca', 'and'],
+            ['saṃyamo;', 'restraint'],
+          ],
+          [
+            ['Appamādo', 'diligence'],
+            ['ca', 'and'],
+            ['dhammesu,', 'in things of the Dhamma'],
+            ['etaṃ', 'this is'],
+            ['maṅgalamuttamaṃ.', 'the highest blessing'],
+          ],
+        ],
+        translation:
+          'Turning away and abstaining from evil, restraint from intoxicants, and diligence in things of the Dhamma — this is the highest blessing.',
+      },
+      {
+        lines: [
+          [
+            ['Gāravo', 'respect'],
+            ['ca', 'and'],
+            ['nivāto', 'humility'],
+            ['ca,', 'and'],
+            ['santuṭṭhi', 'contentment'],
+            ['ca', 'and'],
+            ['kataññutā;', 'gratitude'],
+          ],
+          [
+            ['Kālena', 'at the right time'],
+            ['dhammassavanaṃ,', 'hearing the Dhamma'],
+            ['etaṃ', 'this is'],
+            ['maṅgalamuttamaṃ.', 'the highest blessing'],
+          ],
+        ],
+        translation:
+          'Respect, humility, contentment, gratitude, and hearing the Dhamma at the right time — this is the highest blessing.',
+      },
+      {
+        lines: [
+          [
+            ['Khantī', 'patience'],
+            ['ca', 'and'],
+            ['sovacassatā,', 'being easy to admonish'],
+            ['samaṇānañca', 'and of renunciants'],
+            ['dassanaṃ;', 'the sight'],
+          ],
+          [
+            ['Kālena', 'at the right time'],
+            ['dhammasākacchā,', 'discussion of the Dhamma'],
+            ['etaṃ', 'this is'],
+            ['maṅgalamuttamaṃ.', 'the highest blessing'],
+          ],
+        ],
+        translation:
+          'Patience, being easy to correct, the sight of renunciants, and timely discussion of the Dhamma — this is the highest blessing.',
+      },
+      {
+        lines: [
+          [
+            ['Tapo', 'austerity'],
+            ['ca', 'and'],
+            ['brahmacariyañca,', 'and the holy life'],
+            ['ariyasaccāna', 'of the noble truths'],
+            ['dassanaṃ;', 'the seeing'],
+          ],
+          [
+            ['Nibbānasacchikiriyā', 'realization of nibbāna'],
+            ['ca,', 'and'],
+            ['etaṃ', 'this is'],
+            ['maṅgalamuttamaṃ.', 'the highest blessing'],
+          ],
+        ],
+        translation:
+          'Austerity, the holy life, seeing the noble truths, and the realization of nibbāna — this is the highest blessing.',
+      },
+      {
+        lines: [
+          [
+            ['Phuṭṭhassa', 'of one touched'],
+            ['lokadhammehi,', 'by worldly conditions'],
+            ['cittaṃ', 'the mind'],
+            ['yassa', 'whose'],
+            ['na', 'not'],
+            ['kampati;', 'trembles'],
+          ],
+          [
+            ['Asokaṃ', 'sorrowless'],
+            ['virajaṃ', 'stainless'],
+            ['khemaṃ,', 'secure'],
+            ['etaṃ', 'this is'],
+            ['maṅgalamuttamaṃ.', 'the highest blessing'],
+          ],
+        ],
+        translation:
+          'A mind that does not tremble when touched by worldly conditions — sorrowless, stainless, secure — this is the highest blessing.',
+      },
+      {
+        lines: [
+          [
+            ['Etādisāni', 'such things'],
+            ['katvāna,', 'having done'],
+            ['sabbatthamaparājitā;', 'everywhere undefeated'],
+          ],
+          [
+            ['Sabbattha', 'everywhere'],
+            ['sotthiṃ', 'to safety'],
+            ['gacchanti,', 'they go'],
+            ['taṃ', 'that is'],
+            ['tesaṃ', 'for them'],
+            ['maṅgalamuttamaṃ.', 'the highest blessing'],
+          ],
+        ],
+        translation:
+          'Having done such things, undefeated everywhere, they go everywhere in safety — that is for them the highest blessing.',
+      },
+    ],
+  },
+  {
+    slug: 'four-noble-truths',
+    title: 'The Four Noble Truths',
+    origTitle: 'Dhammacakkappavattana Sutta',
+    source: 'Saṃyutta Nikāya 56.11',
+    lang: 'Pali',
+    kind: 'sutta',
+    chunks: [
+      {
+        lines: [
+          [
+            ['Idaṃ', 'this'],
+            ['kho', 'indeed'],
+            ['pana,', 'now'],
+            ['bhikkhave,', 'O monks'],
+            ['dukkhaṃ', 'of suffering'],
+            ['ariyasaccaṃ:', 'the noble truth'],
+          ],
+          [
+            ['jātipi', 'birth too'],
+            ['dukkhā,', 'is suffering'],
+            ['jarāpi', 'aging too'],
+            ['dukkhā,', 'is suffering'],
+            ['byādhipi', 'sickness too'],
+            ['dukkho,', 'is suffering'],
+            ['maraṇampi', 'death too'],
+            ['dukkhaṃ;', 'is suffering'],
+          ],
+          [
+            ['appiyehi', 'with the unloved'],
+            ['sampayogo', 'union'],
+            ['dukkho,', 'is suffering'],
+            ['piyehi', 'from the loved'],
+            ['vippayogo', 'separation'],
+            ['dukkho,', 'is suffering'],
+          ],
+          [
+            ['yampicchaṃ', 'what one wishes'],
+            ['na', 'not'],
+            ['labhati', 'one gets'],
+            ['tampi', 'that too'],
+            ['dukkhaṃ;', 'is suffering'],
+          ],
+          [
+            ['saṃkhittena', 'in brief'],
+            ['pañcupādānakkhandhā', 'the five aggregates of clinging'],
+            ['dukkhā.', 'are suffering'],
+          ],
+        ],
+        translation:
+          'This, monks, is the noble truth of suffering: birth is suffering, aging is suffering, sickness is suffering, death is suffering; union with the unloved is suffering, separation from the loved is suffering; not to get what one wants is suffering — in brief, the five aggregates of clinging are suffering.',
+      },
+      {
+        lines: [
+          [
+            ['Idaṃ', 'this'],
+            ['kho', 'indeed'],
+            ['pana,', 'now'],
+            ['bhikkhave,', 'O monks'],
+            ['dukkhasamudayaṃ', 'of the origin of suffering'],
+            ['ariyasaccaṃ:', 'the noble truth'],
+          ],
+          [
+            ['yāyaṃ', 'it is this'],
+            ['taṇhā', 'craving'],
+            ['ponobbhavikā', 'leading to rebirth'],
+            ['nandirāgasahagatā', 'bound up with delight and lust'],
+            ['tatratatrābhinandinī,', 'delighting now here, now there'],
+          ],
+          [
+            ['seyyathidaṃ:', 'namely'],
+            ['kāmataṇhā,', 'craving for sense pleasure'],
+            ['bhavataṇhā,', 'craving for existence'],
+            ['vibhavataṇhā.', 'craving for non-existence'],
+          ],
+        ],
+        translation:
+          'This, monks, is the noble truth of the origin of suffering: it is this craving that leads to rebirth, bound up with delight and lust, delighting now here, now there — namely, craving for sense pleasures, craving for existence, craving for non-existence.',
+      },
+      {
+        lines: [
+          [
+            ['Idaṃ', 'this'],
+            ['kho', 'indeed'],
+            ['pana,', 'now'],
+            ['bhikkhave,', 'O monks'],
+            ['dukkhanirodhaṃ', 'of the cessation of suffering'],
+            ['ariyasaccaṃ:', 'the noble truth'],
+          ],
+          [
+            ['yo', 'it is'],
+            ['tassāyeva', 'of that very'],
+            ['taṇhāya', 'craving'],
+            ['asesavirāganirodho', 'the remainderless fading and cessation'],
+          ],
+          [
+            ['cāgo', 'giving up'],
+            ['paṭinissaggo', 'relinquishing'],
+            ['mutti', 'release'],
+            ['anālayo.', 'non-attachment'],
+          ],
+        ],
+        translation:
+          'This, monks, is the noble truth of the cessation of suffering: the remainderless fading away and cessation of that very craving — giving it up, relinquishing it, release from it, non-attachment to it.',
+      },
+      {
+        lines: [
+          [
+            ['Idaṃ', 'this'],
+            ['kho', 'indeed'],
+            ['pana,', 'now'],
+            ['bhikkhave,', 'O monks'],
+            ['dukkhanirodhagāminī', 'leading to the cessation of suffering'],
+            ['paṭipadā', 'the way'],
+            ['ariyasaccaṃ:', 'the noble truth'],
+          ],
+          [
+            ['ayameva', 'it is just this'],
+            ['ariyo', 'noble'],
+            ['aṭṭhaṅgiko', 'eightfold'],
+            ['maggo,', 'path'],
+            ['seyyathidaṃ:', 'namely'],
+          ],
+          [
+            ['sammādiṭṭhi,', 'right view'],
+            ['sammāsaṅkappo,', 'right intention'],
+            ['sammāvācā,', 'right speech'],
+            ['sammākammanto,', 'right action'],
+          ],
+          [
+            ['sammāājīvo,', 'right livelihood'],
+            ['sammāvāyāmo,', 'right effort'],
+            ['sammāsati,', 'right mindfulness'],
+            ['sammāsamādhi.', 'right concentration'],
+          ],
+        ],
+        translation:
+          'This, monks, is the noble truth of the way leading to the cessation of suffering: it is just this noble eightfold path — namely, right view, right intention, right speech, right action, right livelihood, right effort, right mindfulness, right concentration.',
+      },
+    ],
+  },
+  {
+    slug: 'gahakaraka',
+    title: 'The House-Builder',
+    origTitle: 'Gahakāraka gāthā',
+    source: 'Dhammapada 153–154',
+    lang: 'Pali',
+    kind: 'sutta',
+    chunks: [
+      {
+        lines: [
+          [
+            ['Anekajātisaṃsāraṃ,', 'through the round of many births'],
+            ['sandhāvissaṃ', 'I have wandered'],
+            ['anibbisaṃ;', 'finding nothing'],
+          ],
+          [
+            ['Gahakāraṃ', 'the house-builder'],
+            ['gavesanto,', 'seeking'],
+            ['dukkhā', 'painful'],
+            ['jāti', 'is birth'],
+            ['punappunaṃ.', 'again and again'],
+          ],
+        ],
+        translation:
+          'Through the round of many births I have wandered without finding, seeking the builder of this house: painful is birth again and again.',
+      },
+      {
+        lines: [
+          [
+            ['Gahakāraka', 'O house-builder'],
+            ['diṭṭhosi,', 'you are seen'],
+            ['puna', 'again'],
+            ['gehaṃ', 'a house'],
+            ['na', 'not'],
+            ['kāhasi;', 'you will build'],
+          ],
+          [
+            ['Sabbā', 'all'],
+            ['te', 'your'],
+            ['phāsukā', 'rafters'],
+            ['bhaggā,', 'are broken'],
+            ['gahakūṭaṃ', 'the ridgepole'],
+            ['visaṅkhataṃ;', 'is shattered'],
+          ],
+          [
+            ['Visaṅkhāragataṃ', 'gone to the unconditioned'],
+            ['cittaṃ,', 'the mind'],
+            ['taṇhānaṃ', 'of cravings'],
+            ['khayamajjhagā.', 'has reached the destruction'],
+          ],
+        ],
+        translation:
+          'House-builder, you are seen! You will not build a house again. All your rafters are broken, the ridgepole is shattered; the mind, gone to the unconditioned, has reached the end of craving.',
+      },
+    ],
+  },
+  {
+    slug: 'three-marks',
+    title: 'The Three Marks',
+    origTitle: 'Maggavagga',
+    source: 'Dhammapada 277–279',
+    lang: 'Pali',
+    kind: 'sutta',
+    chunks: [
+      {
+        lines: [
+          [
+            ['Sabbe', 'all'],
+            ['saṅkhārā', 'conditioned things'],
+            ['aniccāti,', 'are impermanent, thus'],
+            ['yadā', 'when'],
+            ['paññāya', 'with wisdom'],
+            ['passati;', 'one sees'],
+          ],
+          [
+            ['Atha', 'then'],
+            ['nibbindati', 'one turns away'],
+            ['dukkhe,', 'from suffering'],
+            ['esa', 'this is'],
+            ['maggo', 'the path'],
+            ['visuddhiyā.', 'of purification'],
+          ],
+        ],
+        translation:
+          '"All conditioned things are impermanent" — when one sees this with wisdom, one turns away from suffering: this is the path of purification.',
+      },
+      {
+        lines: [
+          [
+            ['Sabbe', 'all'],
+            ['saṅkhārā', 'conditioned things'],
+            ['dukkhāti,', 'are suffering, thus'],
+            ['yadā', 'when'],
+            ['paññāya', 'with wisdom'],
+            ['passati;', 'one sees'],
+          ],
+          [
+            ['Atha', 'then'],
+            ['nibbindati', 'one turns away'],
+            ['dukkhe,', 'from suffering'],
+            ['esa', 'this is'],
+            ['maggo', 'the path'],
+            ['visuddhiyā.', 'of purification'],
+          ],
+        ],
+        translation:
+          '"All conditioned things are suffering" — when one sees this with wisdom, one turns away from suffering: this is the path of purification.',
+      },
+      {
+        lines: [
+          [
+            ['Sabbe', 'all'],
+            ['dhammā', 'things'],
+            ['anattāti,', 'are not-self, thus'],
+            ['yadā', 'when'],
+            ['paññāya', 'with wisdom'],
+            ['passati;', 'one sees'],
+          ],
+          [
+            ['Atha', 'then'],
+            ['nibbindati', 'one turns away'],
+            ['dukkhe,', 'from suffering'],
+            ['esa', 'this is'],
+            ['maggo', 'the path'],
+            ['visuddhiyā.', 'of purification'],
+          ],
+        ],
+        translation:
+          '"All things are not-self" — when one sees this with wisdom, one turns away from suffering: this is the path of purification.',
+      },
+    ],
+  },
+  {
+    slug: 'bahiya',
+    title: 'The Instruction to Bāhiya',
+    origTitle: 'Bāhiya Sutta',
+    source: 'Udāna 1.10',
+    lang: 'Pali',
+    kind: 'sutta',
+    chunks: [
+      {
+        lines: [
+          [
+            ['Tasmātiha', 'therefore here'],
+            ['te,', 'by you'],
+            ['bāhiya,', 'Bāhiya'],
+            ['evaṃ', 'thus'],
+            ['sikkhitabbaṃ:', 'it should be trained'],
+          ],
+          [
+            ['‘diṭṭhe', 'in the seen'],
+            ['diṭṭhamattaṃ', 'merely the seen'],
+            ['bhavissati,', 'there will be'],
+            ['sute', 'in the heard'],
+            ['sutamattaṃ', 'merely the heard'],
+            ['bhavissati,', 'there will be'],
+          ],
+          [
+            ['mute', 'in the sensed'],
+            ['mutamattaṃ', 'merely the sensed'],
+            ['bhavissati,', 'there will be'],
+            ['viññāte', 'in the cognized'],
+            ['viññātamattaṃ', 'merely the cognized'],
+            ['bhavissatī’ti.', 'there will be, thus'],
+          ],
+          [
+            ['Evañhi', 'for thus'],
+            ['te,', 'by you'],
+            ['bāhiya,', 'Bāhiya'],
+            ['sikkhitabbaṃ.', 'it should be trained'],
+          ],
+        ],
+        translation:
+          'Therefore, Bāhiya, you should train yourself thus: in the seen there will be merely the seen; in the heard, merely the heard; in the sensed, merely the sensed; in the cognized, merely the cognized. Thus, Bāhiya, should you train yourself.',
+      },
+      {
+        lines: [
+          [
+            ['Yato', 'when'],
+            ['kho', 'indeed'],
+            ['te,', 'for you'],
+            ['bāhiya,', 'Bāhiya'],
+            ['diṭṭhe', 'in the seen'],
+            ['diṭṭhamattaṃ', 'merely the seen'],
+            ['bhavissati,', 'there will be'],
+          ],
+          [
+            ['tato', 'then'],
+            ['tvaṃ,', 'you'],
+            ['bāhiya,', 'Bāhiya'],
+            ['na', 'not'],
+            ['tena;', 'by that'],
+          ],
+          [
+            ['yato', 'when'],
+            ['tvaṃ,', 'you'],
+            ['bāhiya,', 'Bāhiya'],
+            ['na', 'not'],
+            ['tena,', 'by that'],
+            ['tato', 'then'],
+            ['tvaṃ,', 'you'],
+            ['bāhiya,', 'Bāhiya'],
+            ['na', 'not'],
+            ['tattha;', 'there'],
+          ],
+          [
+            ['yato', 'when'],
+            ['tvaṃ,', 'you'],
+            ['bāhiya,', 'Bāhiya'],
+            ['na', 'not'],
+            ['tattha,', 'there'],
+            ['tato', 'then'],
+            ['tvaṃ,', 'you'],
+            ['bāhiya,', 'Bāhiya'],
+            ['nevidha', 'neither here'],
+            ['na', 'nor'],
+            ['huraṃ', 'beyond'],
+            ['na', 'nor'],
+            ['ubhayamantarena.', 'between the two'],
+          ],
+          [
+            ['Esevanto', 'just this is the end'],
+            ['dukkhassa.', 'of suffering'],
+          ],
+        ],
+        translation:
+          'When, Bāhiya, for you in the seen there is merely the seen, then, Bāhiya, you will not be "by that"; when you are not "by that", you will not be "in that"; when you are not "in that", you will be neither here nor beyond nor between the two. Just this is the end of suffering.',
+      },
+    ],
+  },
+  {
     slug: 'ovada-patimokkha',
     title: 'The Teaching of the Buddhas',
     origTitle: 'Ovādapāṭimokkha',
