@@ -104,6 +104,8 @@ function definitionSystem(lang: string, kind: string): string {
 
 If the word looks misspelled or is not attested, resolve it to the closest attested form and note that in the grammar field.
 
+Keep the entry compact — the reader is waiting on a popup: 2–4 meanings as short phrases, and analysis and etymology of one or two sentences each, without extended citations.
+
 ${preset.definitionHint}`.trimEnd()
 }
 
@@ -122,10 +124,12 @@ export async function defineWordLlm(
 ): Promise<Definition> {
   const response = await getClient().messages.parse({
     model: MODEL,
-    max_tokens: 16000,
+    max_tokens: 4000,
     system: definitionSystem(lang, kind),
     messages: [{ role: 'user', content: `${lang} word: ${word}` }],
-    output_config: { format: zodOutputFormat(definitionResultSchema) },
+    // A reader is waiting on this lookup: low effort keeps the same model
+    // but cuts thinking time and verbosity dramatically.
+    output_config: { format: zodOutputFormat(definitionResultSchema), effort: 'low' },
   })
   if (response.stop_reason === 'refusal') {
     throw new Error('the model declined to define this word')

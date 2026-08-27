@@ -68,8 +68,13 @@ export class GlossWorker {
     this.running = true
     let hadWork = false
     try {
-      hadWork = (await this.processChunk()) || hadWork
-      hadWork = (await this.processDefinitions()) || hadWork
+      // Definitions are user-awaited (a reader is looking at a spinner), so
+      // they must never queue behind a slow gloss call — run both in parallel.
+      const [chunkWork, defWork] = await Promise.all([
+        this.processChunk(),
+        this.processDefinitions(),
+      ])
+      hadWork = chunkWork || defWork
     } catch (cause) {
       console.error('[worker]', cause)
     } finally {
@@ -130,33 +135,40 @@ export class GlossWorker {
   private async processDefinitions(): Promise<boolean> {
     const pending = await this.pool.query<{ lang: string; word: string; kind: string }>(
       `select lang, word, kind from definitions where status = 'pending'
-       order by created_at asc limit 2`,
+       order by created_at asc limit 4`,
     )
     if (pending.rows.length === 0) return false
 
-    for (const { lang, word, kind } of pending.rows) {
-      if (!llmAvailable()) {
-        await sendInternal(this.app, saveDefinition, {
-          lang,
-          word,
-          definition: null,
-          error: NO_KEY_ERROR,
-        })
-        continue
-      }
-      try {
-        const definition = await defineWordLlm(lang, word, kind)
-        await sendInternal(this.app, saveDefinition, { lang, word, definition, error: null })
-      } catch (cause) {
-        console.error(`[worker] definition failed for "${word}":`, cause)
-        await sendInternal(this.app, saveDefinition, {
-          lang,
-          word,
-          definition: null,
-          error: cause instanceof Error ? cause.message : String(cause),
-        })
-      }
-    }
+    await Promise.all(pending.rows.map((row) => this.processDefinition(row)))
     return true
+  }
+
+  private async processDefinition(row: {
+    lang: string
+    word: string
+    kind: string
+  }): Promise<void> {
+    const { lang, word, kind } = row
+    if (!llmAvailable()) {
+      await sendInternal(this.app, saveDefinition, {
+        lang,
+        word,
+        definition: null,
+        error: NO_KEY_ERROR,
+      })
+      return
+    }
+    try {
+      const definition = await defineWordLlm(lang, word, kind)
+      await sendInternal(this.app, saveDefinition, { lang, word, definition, error: null })
+    } catch (cause) {
+      console.error(`[worker] definition failed for "${word}":`, cause)
+      await sendInternal(this.app, saveDefinition, {
+        lang,
+        word,
+        definition: null,
+        error: cause instanceof Error ? cause.message : String(cause),
+      })
+    }
   }
 }
