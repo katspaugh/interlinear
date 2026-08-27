@@ -1,5 +1,5 @@
 {
-  "name": "interlinear.io",
+  "name": "interlinear",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.33.0",

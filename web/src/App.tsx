@@ -4,7 +4,7 @@ import { useConnectionStatus } from '@intenteffect/react'
 export function Logo() {
   return (
     <>
-      <sup>i</sup>nterl<sub>i</sub>near<sup>io</sup>
+      <sup>i</sup>nterl<sub>i</sub>near
     </>
   )
 }

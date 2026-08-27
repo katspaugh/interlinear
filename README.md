@@ -1,4 +1,4 @@
-# interlinear.io
+# interlinear
 
 Read the Buddha's discourses in Pali — or any text in any language — with an
 **interlinear gloss** above every word. Tap a word for a full **dictionary

@@ -41,7 +41,7 @@ const server = http.createServer((req, res) => {
 })
 
 server.listen(port, '0.0.0.0', () => {
-  console.log(`interlinear.io listening on :${port}`)
+  console.log(`interlinear listening on :${port}`)
 })
 
 async function shutdown(): Promise<void> {
