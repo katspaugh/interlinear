@@ -35,6 +35,11 @@ services:
       - key: ANTHROPIC_API_KEY
         type: SECRET
         scope: RUN_TIME
+      # Owner passphrase: required for adding/removing texts. Without it the
+      # site is read-only for visitors except word lookups (see the daily cap).
+      - key: ADMIN_TOKEN
+        type: SECRET
+        scope: RUN_TIME
       - key: ANTHROPIC_MODEL
         value: claude-opus-5
         scope: RUN_TIME

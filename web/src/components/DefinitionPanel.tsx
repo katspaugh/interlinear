@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useProjection, useSend } from '@intenteffect/react'
 import {
   defineWord,
@@ -58,15 +59,26 @@ export function DefinitionPanel(props: {
     word: props.word,
     tier: 'deep',
   })
+  const [sendError, setSendError] = useState<string | null>(null)
 
-  function request(tier: DefinitionTier) {
-    void send(defineWord, {
+  async function request(tier: DefinitionTier) {
+    const result = await send(defineWord, {
       lang: props.lang,
       word: props.word,
       kind: props.kind,
       tier,
     })
+    setSendError(result.ok ? null : result.error.message)
   }
+
+  // The reader prefetches the fast tier on pointerdown, but that send is
+  // fire-and-forget; re-request here (deduped server-side) so failures like
+  // the daily dictionary budget surface in the panel instead of spinning.
+  useEffect(() => {
+    setSendError(null)
+    void request('fast')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.lang, props.word])
 
   const deepReady = deep.status === 'ready' && deep.data.status === 'ready'
   const deepPending = deep.status === 'ready' && deep.data.status === 'pending'
@@ -89,9 +101,18 @@ export function DefinitionPanel(props: {
         </div>
 
         <div className="definition__sections">
-          {loading && (
+          {loading && !sendError && (
             <div className="definition__spinner">
               <Spinner />
+            </div>
+          )}
+
+          {loading && sendError && (
+            <div className="definition__error">
+              <p>⚠ {sendError}</p>
+              <button className="btn btn_transparent-blue" onClick={() => void request('fast')}>
+                Try again
+              </button>
             </div>
           )}
 
@@ -104,7 +125,7 @@ export function DefinitionPanel(props: {
           {shown?.status === 'failed' && (
             <div className="definition__error">
               <p>⚠ {shown.error}</p>
-              <button className="btn btn_transparent-blue" onClick={() => request('fast')}>
+              <button className="btn btn_transparent-blue" onClick={() => void request('fast')}>
                 Try again
               </button>
             </div>
@@ -118,14 +139,14 @@ export function DefinitionPanel(props: {
         {shown?.status === 'ready' && !deepReady && (
           <div className="definition__more">
             {deep.status === 'ready' && deep.data.status === 'failed' ? (
-              <button className="btn btn_transparent-blue" onClick={() => request('deep')}>
+              <button className="btn btn_transparent-blue" onClick={() => void request('deep')}>
                 ⚠ Detailed entry failed — try again
               </button>
             ) : (
               <button
                 className="btn btn_transparent-blue"
                 disabled={deepPending}
-                onClick={() => request('deep')}
+                onClick={() => void request('deep')}
               >
                 {deepPending ? 'Writing detailed entry…' : 'Load detailed entry'}
               </button>

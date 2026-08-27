@@ -29,12 +29,22 @@ import {
   type TextSummary,
   type Word,
 } from '@interlinear/shared'
+import { adminTokenConfigured, isAdminToken } from './auth.js'
 import { migrateAppTables, normalizeDatabaseUrl } from './db.js'
 
 export interface Ctx {
   /** True for intents issued by the server's own gloss worker. */
   internal: boolean
+  /** True when the request carried the owner passphrase (or none is set). */
+  admin: boolean
 }
+
+/** Intents that mutate the library — owner-only once ADMIN_TOKEN is set. */
+const ADMIN_INTENTS: ReadonlySet<string> = new Set([addText.type, removeText.type])
+
+/** New dictionary entries generated per rolling 24h before non-owners are
+ * asked to come back later — a lid on the LLM bill, not a rate limiter. */
+const DEFINITIONS_DAILY_CAP = Number(process.env.DEFINITIONS_DAILY_CAP ?? 300)
 
 export type App = IntentEffectServer<Ctx, pg.PoolClient>
 
@@ -97,14 +107,35 @@ export async function createApp(connectionString: string): Promise<InterlinearAp
   if (!migrated.ok) throw new Error(`migration failed: ${migrated.error.message}`)
   await migrateAppTables(store.pool)
 
+  if (!adminTokenConfigured()) {
+    console.warn(
+      '[auth] ADMIN_TOKEN is not set — anyone can add and remove texts. ' +
+        'Set it in production.',
+    )
+  }
+
   const app = createIntentEffect<Ctx, pg.PoolClient>({
     store,
-    context: () => ({ internal: false }),
+    context: (req) => {
+      const header = req.headers['x-admin-token']
+      return {
+        internal: false,
+        admin: isAdminToken(Array.isArray(header) ? header[0] : header),
+      }
+    },
     tx: (raw) => raw as pg.PoolClient,
     authorizeIntent: (contract, _input, ctx) => {
       if (INTERNAL_INTENTS.has(contract.type) && !ctx.internal) {
         return err(
           intentEffectError('unauthorized', `intent "${contract.type}" is internal`),
+        )
+      }
+      if (ADMIN_INTENTS.has(contract.type) && !ctx.admin && !ctx.internal) {
+        return err(
+          intentEffectError(
+            'unauthorized',
+            'adding and removing texts requires the owner passphrase',
+          ),
         )
       }
       return { ok: true, value: undefined }
@@ -169,7 +200,7 @@ export async function createApp(connectionString: string): Promise<InterlinearAp
     emit(textRemoved, { id: input.id })
   })
 
-  app.handle(defineWord, async ({ input, tx, emit }) => {
+  app.handle(defineWord, async ({ input, ctx, tx, emit }) => {
     const word = normalizeWord(input.word)
     const lang = input.lang.trim()
     if (!word) {
@@ -183,6 +214,20 @@ export async function createApp(connectionString: string): Promise<InterlinearAp
     // 'ready' and 'pending' need no new event: the projection snapshot (or the
     // already-emitted request event) covers the client. A failed lookup is retried.
     if (status === 'ready' || status === 'pending') return
+    if (!ctx.admin && !existing.rows[0]) {
+      const recent = await tx.query<{ n: string }>(
+        `select count(*) as n from definitions
+         where created_at > now() - interval '24 hours'`,
+      )
+      if (Number(recent.rows[0]!.n) >= DEFINITIONS_DAILY_CAP) {
+        return err(
+          intentEffectError(
+            'handler_failed',
+            'the dictionary’s daily budget is spent — please try again tomorrow',
+          ),
+        )
+      }
+    }
     await tx.query(
       `insert into definitions (lang, word, tier, kind, status)
        values ($1, $2, $3, $4, 'pending')
@@ -315,7 +360,7 @@ export async function sendInternal(
 ): Promise<void> {
   const result = await app.executeSend(
     { intentId: crypto.randomUUID(), type: contract.type, input },
-    { internal: true },
+    { internal: true, admin: true },
   )
   if (!result.ok) {
     throw new Error(`${contract.type} failed: ${result.error.message}`)

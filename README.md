@@ -64,6 +64,12 @@ pnpm start               # production mode: server serves web/dist on :3001
 | `ANTHROPIC_MODEL`   | `claude-opus-5`                                  | Model used for glossing          |
 | `PORT`              | `3001`                                           | HTTP port                        |
 | `DATABASE_SSL`      | —                                                | `no-verify` for DO managed PG    |
+| `ADMIN_TOKEN`       | — (open when unset)                              | Owner passphrase for add/remove  |
+| `DEFINITIONS_DAILY_CAP` | `300`                                        | New dictionary entries per 24h   |
+
+Reading is public. When `ADMIN_TOKEN` is set, adding and removing texts
+requires that passphrase (asked for in the add form / on delete, remembered
+per browser); word lookups stay public but new entries are capped per day.
 
 ## Deploying to DigitalOcean
 

@@ -2,10 +2,12 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSend } from '@intenteffect/react'
 import { addText, textAdded, TEXT_KINDS } from '@interlinear/shared'
+import { getAdminToken, setAdminToken } from '../admin.js'
 
 export function AddTextForm() {
   const send = useSend()
   const navigate = useNavigate()
+  const [passphrase, setPassphrase] = useState(getAdminToken() ?? '')
   const [title, setTitle] = useState('')
   const [origTitle, setOrigTitle] = useState('')
   const [source, setSource] = useState('')
@@ -20,6 +22,7 @@ export function AddTextForm() {
     if (busy) return
     setBusy(true)
     setError(null)
+    setAdminToken(passphrase.trim())
     const result = await send(addText, {
       title,
       origTitle: origTitle || undefined,
@@ -94,6 +97,16 @@ export function AddTextForm() {
               </option>
             ))}
           </select>
+        </label>
+        <label>
+          Owner passphrase
+          <input
+            type="password"
+            autoComplete="off"
+            value={passphrase}
+            placeholder="required to add texts"
+            onChange={(e) => setPassphrase(e.target.value)}
+          />
         </label>
       </div>
 

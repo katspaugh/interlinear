@@ -187,6 +187,24 @@ a {
   padding: 10px 15px;
 }
 
+/* Corner ribbon on texts marked as read (local to this browser) */
+.card__ribbon {
+  position: absolute;
+  z-index: 3;
+  top: 14px;
+  right: -30px;
+  transform: rotate(45deg);
+  background: #008acc;
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 3px 0;
+  width: 120px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
 .card__lang {
   float: right;
   color: #fff;

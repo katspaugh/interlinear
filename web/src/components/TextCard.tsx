@@ -1,11 +1,14 @@
 import { Link } from 'react-router-dom'
 import type { TextSummary } from '@interlinear/shared'
+import { isRead, useReadMarks } from '../readMarks.js'
 import { Words } from './Words.js'
 
 export function TextCard(props: { text: TextSummary }) {
   const { text } = props
+  useReadMarks()
   return (
     <Link to={`/text/${text.slug}`} className="card">
+      {isRead(text.slug) && <span className="card__ribbon">read</span>}
       <div className="card__heading">
         <span className="card__lang">{text.lang}</span>
         <h3 className="card__title">{text.origTitle ?? text.title}</h3>

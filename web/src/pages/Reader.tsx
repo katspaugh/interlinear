@@ -8,6 +8,8 @@ import {
   textDetail,
   type Word,
 } from '@interlinear/shared'
+import { getAdminToken, setAdminToken } from '../admin.js'
+import { isRead, toggleRead, useReadMarks } from '../readMarks.js'
 import { DefinitionPanel } from '../components/DefinitionPanel.js'
 import { Spinner } from '../components/Spinner.js'
 import { Words } from '../components/Words.js'
@@ -25,6 +27,7 @@ export function Reader() {
   const [showGlosses, setShowGlosses] = useState(true)
   const [showTranslation, setShowTranslation] = useState(false)
   const [selected, setSelected] = useState<SelectedWord | null>(null)
+  useReadMarks()
 
   if (detail.status === 'loading') return <Spinner />
   if (detail.status === 'error') {
@@ -68,8 +71,18 @@ export function Reader() {
 
   async function remove() {
     if (!window.confirm(`Delete "${text.title}"?`)) return
+    if (!getAdminToken()) {
+      const token = window.prompt('Owner passphrase')
+      if (!token) return
+      setAdminToken(token.trim())
+    }
     const result = await send(removeText, { id: text.id })
-    if (result.ok) navigate('/')
+    if (result.ok) {
+      navigate('/')
+    } else {
+      window.alert(result.error.message)
+      if (result.error.code === 'unauthorized') setAdminToken('')
+    }
   }
 
   return (
@@ -91,6 +104,14 @@ export function Reader() {
               onChange={(e) => setShowTranslation(e.target.checked)}
             />{' '}
             Translation
+          </label>
+          <label className="reader__toggle" title="Remembered in this browser only">
+            <input
+              type="checkbox"
+              checked={isRead(slug)}
+              onChange={() => toggleRead(slug)}
+            />{' '}
+            Read
           </label>
           {!text.builtin && (
             <button className="reader__delete" onClick={() => void remove()}>
