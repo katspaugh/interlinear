@@ -1,0 +1,5 @@
+packages:
+  - shared
+  - server
+  - web
+  - vendor/intenteffect/packages/*

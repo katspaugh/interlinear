@@ -1,2 +1,6 @@
-/etc/config.json
-public
+node_modules/
+dist/
+*.log
+.env
+.env.local
+.DS_Store

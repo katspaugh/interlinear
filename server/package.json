@@ -1,0 +1,25 @@
+{
+  "name": "@interlinear/server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.121.0",
+    "@intenteffect/core": "workspace:*",
+    "@intenteffect/postgres": "workspace:*",
+    "@intenteffect/server": "workspace:*",
+    "@interlinear/shared": "workspace:*",
+    "pg": "^8.23.0",
+    "tsx": "^4.23.12",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.11.0"
+  }
+}

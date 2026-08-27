@@ -1,0 +1,39 @@
+# DigitalOcean App Platform spec.
+# Deploy:   doctl apps create --spec .do/app.yaml
+# Then set the ANTHROPIC_API_KEY secret in the app's settings (or below).
+name: interlinear
+region: fra
+
+services:
+  - name: web
+    dockerfile_path: Dockerfile
+    source_dir: /
+    github:
+      repo: katspaugh/interlinear.io
+      branch: main
+      deploy_on_push: true
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    health_check:
+      http_path: /healthz
+    envs:
+      - key: DATABASE_URL
+        value: ${db.DATABASE_URL}
+        scope: RUN_TIME
+      # DO managed Postgres presents a self-signed CA; keep TLS on but skip
+      # chain verification (the connection stays on DO's private network).
+      - key: DATABASE_SSL
+        value: no-verify
+        scope: RUN_TIME
+      - key: ANTHROPIC_API_KEY
+        type: SECRET
+        scope: RUN_TIME
+      - key: ANTHROPIC_MODEL
+        value: claude-opus-5
+        scope: RUN_TIME
+
+databases:
+  - name: db
+    engine: PG
+    production: false

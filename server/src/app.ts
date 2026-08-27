@@ -1,0 +1,312 @@
+import crypto from 'node:crypto'
+import type pg from 'pg'
+import { err, intentEffectError } from '@intenteffect/core'
+import { createIntentEffect, type IntentEffectServer } from '@intenteffect/server'
+import { createPostgresStore, type PostgresStore } from '@intenteffect/postgres'
+import {
+  INTERNAL_INTENTS,
+  addText,
+  defineWord,
+  markGlossFailed,
+  normalizeWord,
+  removeText,
+  saveChunkGloss,
+  saveDefinition,
+  slugify,
+  splitChunks,
+  textAdded,
+  textChunkGlossed,
+  textDetail,
+  textGlossFailed,
+  textLibrary,
+  textRemoved,
+  wordDefined,
+  wordDefinition,
+  wordDefinitionFailed,
+  wordDefinitionRequested,
+  PREVIEW_WORDS,
+  type TextStatus,
+  type TextSummary,
+  type Word,
+} from '@interlinear/shared'
+import { migrateAppTables, normalizeDatabaseUrl } from './db.js'
+
+export interface Ctx {
+  /** True for intents issued by the server's own gloss worker. */
+  internal: boolean
+}
+
+export type App = IntentEffectServer<Ctx, pg.PoolClient>
+
+export interface InterlinearApp {
+  app: App
+  store: PostgresStore
+}
+
+interface TextRow {
+  id: string
+  slug: string
+  title: string
+  orig_title: string | null
+  source: string | null
+  lang: string
+  kind: string
+  status: string
+  builtin: boolean
+  created_at: Date
+  chunk_count: string | number
+  glossed_count: string | number
+  preview_words?: Word[] | null
+}
+
+function toSummary(row: TextRow): TextSummary {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    origTitle: row.orig_title,
+    source: row.source,
+    lang: row.lang,
+    kind: row.kind,
+    status: row.status as TextStatus,
+    builtin: row.builtin,
+    chunkCount: Number(row.chunk_count),
+    glossedCount: Number(row.glossed_count),
+    createdAt: row.created_at.toISOString(),
+    preview: row.preview_words ? row.preview_words.slice(0, PREVIEW_WORDS) : null,
+  }
+}
+
+const SUMMARY_SQL = `
+  select t.id, t.slug, t.title, t.orig_title, t.source, t.lang, t.kind,
+         t.status, t.builtin, t.created_at,
+         count(c.idx) as chunk_count,
+         count(c.words) as glossed_count,
+         (select c0.words from text_chunks c0
+          where c0.text_id = t.id and c0.idx = 0) as preview_words
+  from texts t
+  left join text_chunks c on c.text_id = t.id
+`
+
+export async function createApp(connectionString: string): Promise<InterlinearApp> {
+  const store = createPostgresStore({
+    connectionString: normalizeDatabaseUrl(connectionString),
+  })
+
+  const migrated = await store.migrate()
+  if (!migrated.ok) throw new Error(`migration failed: ${migrated.error.message}`)
+  await migrateAppTables(store.pool)
+
+  const app = createIntentEffect<Ctx, pg.PoolClient>({
+    store,
+    context: () => ({ internal: false }),
+    tx: (raw) => raw as pg.PoolClient,
+    authorizeIntent: (contract, _input, ctx) => {
+      if (INTERNAL_INTENTS.has(contract.type) && !ctx.internal) {
+        return err(
+          intentEffectError('unauthorized', `intent "${contract.type}" is internal`),
+        )
+      }
+      return { ok: true, value: undefined }
+    },
+  })
+
+  /* ---------------- intents ---------------- */
+
+  app.handle(addText, async ({ input, tx, emit }) => {
+    const chunks = splitChunks(input.original)
+    if (chunks.length === 0) {
+      return err(intentEffectError('validation_failed', 'the text contains no words'))
+    }
+
+    const base = slugify(input.title)
+    const taken = await tx.query<{ slug: string }>(
+      `select slug from texts where slug = $1 or slug like $2`,
+      [base, `${base}-%`],
+    )
+    const slugs = new Set(taken.rows.map((r) => r.slug))
+    let slug = base
+    for (let n = 2; slugs.has(slug); n++) slug = `${base}-${n}`
+
+    const id = crypto.randomUUID()
+    const inserted = await tx.query<TextRow>(
+      `insert into texts (id, slug, title, orig_title, source, lang, kind, status)
+       values ($1, $2, $3, $4, $5, $6, $7, 'glossing')
+       returning id, slug, title, orig_title, source, lang, kind, status, builtin, created_at`,
+      [
+        id,
+        slug,
+        input.title.trim(),
+        input.origTitle?.trim() || null,
+        input.source?.trim() || null,
+        input.lang.trim(),
+        input.kind,
+      ],
+    )
+    for (const [idx, original] of chunks.entries()) {
+      await tx.query(
+        `insert into text_chunks (text_id, idx, original) values ($1, $2, $3)`,
+        [id, idx, original],
+      )
+    }
+
+    const row = inserted.rows[0]!
+    emit(textAdded, {
+      ...toSummary({ ...row, chunk_count: chunks.length, glossed_count: 0 }),
+    })
+  })
+
+  app.handle(removeText, async ({ input, tx, emit }) => {
+    const deleted = await tx.query(
+      `delete from texts where id = $1 and builtin = false`,
+      [input.id],
+    )
+    if (deleted.rowCount === 0) {
+      return err(
+        intentEffectError('not_found', 'text not found (built-in texts cannot be removed)'),
+      )
+    }
+    emit(textRemoved, { id: input.id })
+  })
+
+  app.handle(defineWord, async ({ input, tx, emit }) => {
+    const word = normalizeWord(input.word)
+    const lang = input.lang.trim()
+    if (!word) {
+      return err(intentEffectError('validation_failed', 'not a word'))
+    }
+    const existing = await tx.query<{ status: string }>(
+      `select status from definitions where lang = $1 and word = $2`,
+      [lang, word],
+    )
+    const status = existing.rows[0]?.status
+    // 'ready' and 'pending' need no new event: the projection snapshot (or the
+    // already-emitted request event) covers the client. A failed lookup is retried.
+    if (status === 'ready' || status === 'pending') return
+    await tx.query(
+      `insert into definitions (lang, word, kind, status) values ($1, $2, $3, 'pending')
+       on conflict (lang, word) do update set status = 'pending', error = null`,
+      [lang, word, input.kind],
+    )
+    emit(wordDefinitionRequested, { lang, word })
+  })
+
+  /* Internal intents — reachable only with ctx.internal (the gloss worker). */
+
+  app.handle(saveChunkGloss, async ({ input, tx, emit }) => {
+    const updated = await tx.query(
+      `update text_chunks set words = $3, translation = $4
+       where text_id = $1 and idx = $2`,
+      [input.textId, input.idx, JSON.stringify(input.words), input.translation],
+    )
+    if (updated.rowCount === 0) {
+      return err(intentEffectError('not_found', 'chunk not found'))
+    }
+    const counts = await tx.query<{ chunk_count: string; glossed_count: string }>(
+      `select count(idx) as chunk_count, count(words) as glossed_count
+       from text_chunks where text_id = $1`,
+      [input.textId],
+    )
+    const chunkCount = Number(counts.rows[0]!.chunk_count)
+    const glossedCount = Number(counts.rows[0]!.glossed_count)
+    const status: TextStatus = glossedCount >= chunkCount ? 'ready' : 'glossing'
+    if (status === 'ready') {
+      await tx.query(`update texts set status = 'ready' where id = $1`, [input.textId])
+    }
+    emit(textChunkGlossed, {
+      textId: input.textId,
+      idx: input.idx,
+      words: input.words,
+      translation: input.translation,
+      glossedCount,
+      status,
+    })
+  })
+
+  app.handle(markGlossFailed, async ({ input, tx, emit }) => {
+    await tx.query(`update texts set status = 'failed' where id = $1`, [input.textId])
+    emit(textGlossFailed, { textId: input.textId, error: input.error })
+  })
+
+  app.handle(saveDefinition, async ({ input, tx, emit }) => {
+    if (input.definition) {
+      await tx.query(
+        `update definitions set status = 'ready', definition = $3, error = null
+         where lang = $1 and word = $2`,
+        [input.lang, input.word, JSON.stringify(input.definition)],
+      )
+      emit(wordDefined, { lang: input.lang, word: input.word, definition: input.definition })
+    } else {
+      const error = input.error ?? 'definition lookup failed'
+      await tx.query(
+        `update definitions set status = 'failed', error = $3
+         where lang = $1 and word = $2`,
+        [input.lang, input.word, error],
+      )
+      emit(wordDefinitionFailed, { lang: input.lang, word: input.word, error })
+    }
+  })
+
+  /* ---------------- projections ---------------- */
+
+  app.project(textLibrary, {
+    query: async ({ tx }) => {
+      const result = await tx.query<TextRow>(
+        `${SUMMARY_SQL} group by t.id order by t.created_at asc, t.id asc`,
+      )
+      return result.rows.map(toSummary)
+    },
+  })
+
+  app.project(textDetail, {
+    query: async ({ params, tx }) => {
+      const texts = await tx.query<TextRow>(
+        `${SUMMARY_SQL} where t.slug = $1 group by t.id`,
+        [params.slug],
+      )
+      const row = texts.rows[0]
+      if (!row) return null
+      const chunks = await tx.query(
+        `select idx, original, words, translation from text_chunks
+         where text_id = $1 order by idx asc`,
+        [row.id],
+      )
+      return { text: toSummary(row), chunks: chunks.rows }
+    },
+  })
+
+  app.project(wordDefinition, {
+    query: async ({ params, tx }) => {
+      const word = normalizeWord(params.word)
+      const result = await tx.query(
+        `select status, definition, error from definitions
+         where lang = $1 and word = $2`,
+        [params.lang, word],
+      )
+      const row = result.rows[0]
+      if (!row) return { status: 'none', definition: null, error: null }
+      return {
+        status: row.status,
+        definition: row.definition ?? null,
+        error: row.error ?? null,
+      }
+    },
+  })
+
+  return { app, store }
+}
+
+/** Issue an intent from the server itself (the gloss worker). */
+export async function sendInternal(
+  app: App,
+  contract: { type: string },
+  input: unknown,
+): Promise<void> {
+  const result = await app.executeSend(
+    { intentId: crypto.randomUUID(), type: contract.type, input },
+    { internal: true },
+  )
+  if (!result.ok) {
+    throw new Error(`${contract.type} failed: ${result.error.message}`)
+  }
+}
