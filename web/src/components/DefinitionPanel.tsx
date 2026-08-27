@@ -1,11 +1,45 @@
 import { useProjection, useSend } from '@intenteffect/react'
-import { defineWord, wordDefinition } from '@interlinear/shared'
+import {
+  defineWord,
+  wordDefinition,
+  type Definition,
+  type DefinitionTier,
+} from '@interlinear/shared'
 import { Spinner } from './Spinner.js'
+
+function Entry(props: { definition: Definition; detailed: boolean }) {
+  const { definition } = props
+  return (
+    <div className="definition__entry">
+      <h3 className="definition__title">
+        {definition.headword}
+        {props.detailed && <span className="definition__badge">detailed</span>}
+      </h3>
+      <p className="definition__grammar">{definition.grammar}</p>
+      <ol className="definition__meanings">
+        {definition.meanings.map((meaning, i) => (
+          <li key={i}>{meaning}</li>
+        ))}
+      </ol>
+      {definition.analysis && (
+        <p>
+          <b>Analysis.</b> {definition.analysis}
+        </p>
+      )}
+      {definition.etymology && (
+        <p>
+          <b>Etymology.</b> {definition.etymology}
+        </p>
+      )}
+    </div>
+  )
+}
 
 /**
  * The sidebar dictionary entry for the currently selected word.
- * The projection snapshot returns the cached entry instantly; a fresh
- * lookup arrives as a `word.defined` event once the LLM worker finishes.
+ * A quick entry is generated on tap; the "Load detailed entry" button
+ * requests a richer one from a larger model. Both are cached per word,
+ * so each tier is generated at most once and then shared by all readers.
  */
 export function DefinitionPanel(props: {
   lang: string
@@ -14,12 +48,30 @@ export function DefinitionPanel(props: {
   gloss: string | null
 }) {
   const send = useSend()
-  const state = useProjection(wordDefinition, { lang: props.lang, word: props.word })
+  const fast = useProjection(wordDefinition, {
+    lang: props.lang,
+    word: props.word,
+    tier: 'fast',
+  })
+  const deep = useProjection(wordDefinition, {
+    lang: props.lang,
+    word: props.word,
+    tier: 'deep',
+  })
 
-  const loading =
-    state.status === 'loading' ||
-    (state.status === 'ready' &&
-      (state.data.status === 'none' || state.data.status === 'pending'))
+  function request(tier: DefinitionTier) {
+    void send(defineWord, {
+      lang: props.lang,
+      word: props.word,
+      kind: props.kind,
+      tier,
+    })
+  }
+
+  const deepReady = deep.status === 'ready' && deep.data.status === 'ready'
+  const deepPending = deep.status === 'ready' && deep.data.status === 'pending'
+  const shown = deepReady ? deep.data : fast.status === 'ready' ? fast.data : null
+  const loading = !shown || shown.status === 'none' || shown.status === 'pending'
 
   return (
     <div className="definition">
@@ -43,52 +95,43 @@ export function DefinitionPanel(props: {
             </div>
           )}
 
-          {state.status === 'error' && (
-            <p className="definition__error">⚠ {state.error.message}</p>
+          {(fast.status === 'error' || deep.status === 'error') && (
+            <p className="definition__error">
+              ⚠ {(fast.status === 'error' ? fast.error : (deep as { error: { message: string } }).error).message}
+            </p>
           )}
 
-          {state.status === 'ready' && state.data.status === 'failed' && (
+          {shown?.status === 'failed' && (
             <div className="definition__error">
-              <p>⚠ {state.data.error}</p>
-              <button
-                className="btn btn_transparent-blue"
-                onClick={() =>
-                  void send(defineWord, {
-                    lang: props.lang,
-                    word: props.word,
-                    kind: props.kind,
-                  })
-                }
-              >
+              <p>⚠ {shown.error}</p>
+              <button className="btn btn_transparent-blue" onClick={() => request('fast')}>
                 Try again
               </button>
             </div>
           )}
 
-          {state.status === 'ready' &&
-            state.data.status === 'ready' &&
-            state.data.definition && (
-              <div className="definition__entry">
-                <h3 className="definition__title">{state.data.definition.headword}</h3>
-                <p className="definition__grammar">{state.data.definition.grammar}</p>
-                <ol className="definition__meanings">
-                  {state.data.definition.meanings.map((meaning, i) => (
-                    <li key={i}>{meaning}</li>
-                  ))}
-                </ol>
-                {state.data.definition.analysis && (
-                  <p>
-                    <b>Analysis.</b> {state.data.definition.analysis}
-                  </p>
-                )}
-                {state.data.definition.etymology && (
-                  <p>
-                    <b>Etymology.</b> {state.data.definition.etymology}
-                  </p>
-                )}
-              </div>
-            )}
+          {shown?.status === 'ready' && shown.definition && (
+            <Entry definition={shown.definition} detailed={deepReady} />
+          )}
         </div>
+
+        {shown?.status === 'ready' && !deepReady && (
+          <div className="definition__more">
+            {deep.status === 'ready' && deep.data.status === 'failed' ? (
+              <button className="btn btn_transparent-blue" onClick={() => request('deep')}>
+                ⚠ Detailed entry failed — try again
+              </button>
+            ) : (
+              <button
+                className="btn btn_transparent-blue"
+                disabled={deepPending}
+                onClick={() => request('deep')}
+              >
+                {deepPending ? 'Writing detailed entry…' : 'Load detailed entry'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

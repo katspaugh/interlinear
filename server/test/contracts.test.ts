@@ -75,7 +75,7 @@ test('textDetail applies chunk glosses only to the matching text', () => {
   assert.equal(updated.text.glossedCount, 1)
 })
 
-test('wordDefinition reducers filter by lang and word params', () => {
+test('wordDefinition reducers filter by lang, word, and tier params', () => {
   const defined = wordDefinition.reducers['word.defined']!
   const none: WordDefinitionState = { status: 'none', definition: null, error: null }
   const definition = {
@@ -85,18 +85,26 @@ test('wordDefinition reducers filter by lang and word params', () => {
     analysis: null,
     etymology: null,
   }
+  const params = { lang: 'Pali', word: 'mettā', tier: 'fast' as const }
 
-  const miss = defined(
+  const missWord = defined(
     none,
-    { lang: 'Pali', word: 'other', definition },
-    { lang: 'Pali', word: 'mettā' },
+    { lang: 'Pali', word: 'other', tier: 'fast', definition },
+    params,
   ) as WordDefinitionState
-  assert.equal(miss.status, 'none')
+  assert.equal(missWord.status, 'none')
+
+  const missTier = defined(
+    none,
+    { lang: 'Pali', word: 'mettā', tier: 'deep', definition },
+    params,
+  ) as WordDefinitionState
+  assert.equal(missTier.status, 'none')
 
   const hit = defined(
     none,
-    { lang: 'Pali', word: 'mettā', definition },
-    { lang: 'Pali', word: 'mettā' },
+    { lang: 'Pali', word: 'mettā', tier: 'fast', definition },
+    params,
   ) as WordDefinitionState
   assert.equal(hit.status, 'ready')
   assert.equal(hit.definition?.headword, 'mettā')

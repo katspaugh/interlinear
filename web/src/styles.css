@@ -566,6 +566,27 @@ a {
   margin-bottom: 4px;
 }
 
+.definition__badge {
+  font-size: 11px;
+  font-weight: normal;
+  color: #008acc;
+  border: 1px solid #b1e7f8;
+  border-radius: 3px;
+  padding: 1px 6px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.definition__more {
+  margin-top: 15px;
+  text-align: center;
+}
+
+.definition__more .btn[disabled] {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .definition__spinner {
   position: absolute;
   z-index: 1;

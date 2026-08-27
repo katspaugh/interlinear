@@ -51,6 +51,11 @@ export const textDetailSchema = z.object({
 })
 export type TextDetail = z.output<typeof textDetailSchema>
 
+/** Depth of a dictionary entry: 'fast' is the quick entry generated on tap,
+ * 'deep' is the richer entry loaded on demand. Each is cached separately. */
+export const definitionTierSchema = z.enum(['fast', 'deep'])
+export type DefinitionTier = z.output<typeof definitionTierSchema>
+
 /** An LLM-generated dictionary entry for a word. */
 export const definitionSchema = z.object({
   headword: z.string(),
@@ -97,17 +102,27 @@ export const textRemoved = event('text.removed', z.object({ id: z.uuid() }))
 
 export const wordDefinitionRequested = event(
   'word.definitionRequested',
-  z.object({ lang: z.string(), word: z.string() }),
+  z.object({ lang: z.string(), word: z.string(), tier: definitionTierSchema }),
 )
 
 export const wordDefined = event(
   'word.defined',
-  z.object({ lang: z.string(), word: z.string(), definition: definitionSchema }),
+  z.object({
+    lang: z.string(),
+    word: z.string(),
+    tier: definitionTierSchema,
+    definition: definitionSchema,
+  }),
 )
 
 export const wordDefinitionFailed = event(
   'word.definitionFailed',
-  z.object({ lang: z.string(), word: z.string(), error: z.string() }),
+  z.object({
+    lang: z.string(),
+    word: z.string(),
+    tier: definitionTierSchema,
+    error: z.string(),
+  }),
 )
 
 /* ------------------------------------------------------------------ */
@@ -138,6 +153,7 @@ export const defineWord = intent(
     word: z.string().min(1).max(100),
     /** Text-type preset of the text the word was clicked in. */
     kind: z.string().min(1).max(50).default('prose'),
+    tier: definitionTierSchema.default('fast'),
   }),
   { emits: [wordDefinitionRequested] },
 )
@@ -167,6 +183,7 @@ export const saveDefinition = intent(
   z.object({
     lang: z.string(),
     word: z.string(),
+    tier: definitionTierSchema,
     definition: definitionSchema.nullable(),
     error: z.string().nullable(),
   }),
@@ -236,24 +253,27 @@ export const textDetail = projection({
     detail && detail.text.id === data.id ? null : detail,
   )
 
-/** The dictionary entry for one normalized word — powers the sidebar. */
+/** The dictionary entry for one normalized word at one tier — powers the sidebar. */
 export const wordDefinition = projection({
   name: 'words.definition',
-  params: z.object({ lang: z.string(), word: z.string() }),
+  params: z.object({ lang: z.string(), word: z.string(), tier: definitionTierSchema }),
   result: wordDefinitionStateSchema,
 })
   .on(wordDefinitionRequested, (state, data, params) =>
-    data.lang === params.lang && data.word === params.word && state.status === 'none'
+    data.lang === params.lang &&
+    data.word === params.word &&
+    data.tier === params.tier &&
+    state.status === 'none'
       ? { status: 'pending' as const, definition: null, error: null }
       : state,
   )
   .on(wordDefined, (state, data, params) =>
-    data.lang === params.lang && data.word === params.word
+    data.lang === params.lang && data.word === params.word && data.tier === params.tier
       ? { status: 'ready' as const, definition: data.definition, error: null }
       : state,
   )
   .on(wordDefinitionFailed, (state, data, params) =>
-    data.lang === params.lang && data.word === params.word
+    data.lang === params.lang && data.word === params.word && data.tier === params.tier
       ? { status: 'failed' as const, definition: null, error: data.error }
       : state,
   )

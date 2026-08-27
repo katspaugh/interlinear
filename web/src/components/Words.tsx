@@ -10,6 +10,9 @@ export function Words(props: {
   words: Word[]
   showGlosses: boolean
   onWordClick?: (word: Word) => void
+  /** Fired on pointerdown, before the click completes — lets the reader
+   * start fetching the definition a beat earlier. */
+  onWordDown?: (word: Word) => void
   selectedWord?: string | null
 }) {
   const seen = new Map<string, number>()
@@ -32,6 +35,7 @@ export function Words(props: {
               ]
                 .filter(Boolean)
                 .join(' ')}
+              onPointerDown={clickable && props.onWordDown ? () => props.onWordDown!(word) : undefined}
               onClick={clickable ? () => props.onWordClick!(word) : undefined}
             >
               <span className="word__gloss">{word.g || ' '}</span>

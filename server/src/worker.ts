@@ -3,6 +3,7 @@ import {
   markGlossFailed,
   saveChunkGloss,
   saveDefinition,
+  type DefinitionTier,
 } from '@interlinear/shared'
 import { sendInternal, type App } from './app.js'
 import { defineWordLlm, glossChunk, llmAvailable } from './llm.js'
@@ -12,6 +13,13 @@ const MAX_CHUNK_FAILURES = 2
 
 const NO_KEY_ERROR =
   'Glossing is not available: the server has no ANTHROPIC_API_KEY configured.'
+
+interface PendingDefinition {
+  lang: string
+  word: string
+  tier: DefinitionTier
+  kind: string
+}
 
 interface PendingChunk {
   text_id: string
@@ -133,8 +141,8 @@ export class GlossWorker {
   }
 
   private async processDefinitions(): Promise<boolean> {
-    const pending = await this.pool.query<{ lang: string; word: string; kind: string }>(
-      `select lang, word, kind from definitions where status = 'pending'
+    const pending = await this.pool.query<PendingDefinition>(
+      `select lang, word, tier, kind from definitions where status = 'pending'
        order by created_at asc limit 4`,
     )
     if (pending.rows.length === 0) return false
@@ -143,29 +151,33 @@ export class GlossWorker {
     return true
   }
 
-  private async processDefinition(row: {
-    lang: string
-    word: string
-    kind: string
-  }): Promise<void> {
-    const { lang, word, kind } = row
+  private async processDefinition(row: PendingDefinition): Promise<void> {
+    const { lang, word, tier, kind } = row
     if (!llmAvailable()) {
       await sendInternal(this.app, saveDefinition, {
         lang,
         word,
+        tier,
         definition: null,
         error: NO_KEY_ERROR,
       })
       return
     }
     try {
-      const definition = await defineWordLlm(lang, word, kind)
-      await sendInternal(this.app, saveDefinition, { lang, word, definition, error: null })
-    } catch (cause) {
-      console.error(`[worker] definition failed for "${word}":`, cause)
+      const definition = await defineWordLlm(lang, word, kind, tier)
       await sendInternal(this.app, saveDefinition, {
         lang,
         word,
+        tier,
+        definition,
+        error: null,
+      })
+    } catch (cause) {
+      console.error(`[worker] definition failed for "${word}" (${tier}):`, cause)
+      await sendInternal(this.app, saveDefinition, {
+        lang,
+        word,
+        tier,
         definition: null,
         error: cause instanceof Error ? cause.message : String(cause),
       })

@@ -5,10 +5,16 @@ import {
   textKindPreset,
   tokenizeChunk,
   type Definition,
+  type DefinitionTier,
   type Word,
 } from '@interlinear/shared'
 
 const MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-opus-5'
+/** Quick entry shown on tap — small fast model, no extended reasoning. */
+const FAST_DEFINITION_MODEL =
+  process.env.DEFINITION_MODEL_FAST ?? 'claude-haiku-4-5'
+/** Richer entry loaded on demand via the "detailed entry" button. */
+const DEEP_DEFINITION_MODEL = process.env.DEFINITION_MODEL_DEEP ?? 'claude-sonnet-5'
 
 export function llmAvailable(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY)
@@ -92,8 +98,12 @@ ${tokenList}`
   throw new Error('the model could not align glosses with the tokens')
 }
 
-function definitionSystem(lang: string, kind: string): string {
+function definitionSystem(lang: string, kind: string, tier: DefinitionTier): string {
   const preset = textKindPreset(kind)
+  const depth =
+    tier === 'fast'
+      ? 'Keep the entry compact — the reader is waiting on a popup: 2–4 meanings as short phrases, and analysis and etymology of one or two sentences each, without extended citations.'
+      : 'Write a thorough entry: cover the range of meanings with nuances, give a full morphological analysis, and include etymology with cognates and, where illuminating, canonical usage examples.'
   return `You are an expert lexicographer of ${lang}. Given one word as it appears in a text (an inflected surface form, possibly a compound or contraction), write a dictionary entry for language learners:
 
 - headword: the lemma (citation form) the surface form belongs to
@@ -104,7 +114,7 @@ function definitionSystem(lang: string, kind: string): string {
 
 If the word looks misspelled or is not attested, resolve it to the closest attested form and note that in the grammar field.
 
-Keep the entry compact — the reader is waiting on a popup: 2–4 meanings as short phrases, and analysis and etymology of one or two sentences each, without extended citations.
+${depth}
 
 ${preset.definitionHint}`.trimEnd()
 }
@@ -121,15 +131,19 @@ export async function defineWordLlm(
   lang: string,
   word: string,
   kind: string,
+  tier: DefinitionTier,
 ): Promise<Definition> {
+  // Haiku 4.5 rejects output_config.effort, so it is only set on the deep
+  // tier ('low' there keeps Sonnet fast; its depth comes from the prompt).
   const response = await getClient().messages.parse({
-    model: MODEL,
-    max_tokens: 4000,
-    system: definitionSystem(lang, kind),
+    model: tier === 'fast' ? FAST_DEFINITION_MODEL : DEEP_DEFINITION_MODEL,
+    max_tokens: tier === 'fast' ? 2000 : 8000,
+    system: definitionSystem(lang, kind, tier),
     messages: [{ role: 'user', content: `${lang} word: ${word}` }],
-    // A reader is waiting on this lookup: low effort keeps the same model
-    // but cuts thinking time and verbosity dramatically.
-    output_config: { format: zodOutputFormat(definitionResultSchema), effort: 'low' },
+    output_config:
+      tier === 'fast'
+        ? { format: zodOutputFormat(definitionResultSchema) }
+        : { format: zodOutputFormat(definitionResultSchema), effort: 'medium' },
   })
   if (response.stop_reason === 'refusal') {
     throw new Error('the model declined to define this word')

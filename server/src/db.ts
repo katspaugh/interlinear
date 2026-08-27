@@ -41,12 +41,25 @@ export async function migrateAppTables(pool: pg.Pool): Promise<void> {
     create table if not exists definitions (
       lang text not null,
       word text not null,
+      tier text not null default 'fast',
       kind text not null default 'prose',
       status text not null default 'pending',
       definition jsonb,
       error text,
       created_at timestamptz not null default now(),
-      primary key (lang, word)
+      primary key (lang, word, tier)
     );
+
+    -- Upgrade databases created before definition tiers existed.
+    do $$ begin
+      if not exists (
+        select 1 from information_schema.columns
+        where table_name = 'definitions' and column_name = 'tier'
+      ) then
+        alter table definitions add column tier text not null default 'fast';
+        alter table definitions drop constraint definitions_pkey;
+        alter table definitions add primary key (lang, word, tier);
+      end if;
+    end $$;
   `)
 }

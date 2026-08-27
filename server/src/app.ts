@@ -176,19 +176,20 @@ export async function createApp(connectionString: string): Promise<InterlinearAp
       return err(intentEffectError('validation_failed', 'not a word'))
     }
     const existing = await tx.query<{ status: string }>(
-      `select status from definitions where lang = $1 and word = $2`,
-      [lang, word],
+      `select status from definitions where lang = $1 and word = $2 and tier = $3`,
+      [lang, word, input.tier],
     )
     const status = existing.rows[0]?.status
     // 'ready' and 'pending' need no new event: the projection snapshot (or the
     // already-emitted request event) covers the client. A failed lookup is retried.
     if (status === 'ready' || status === 'pending') return
     await tx.query(
-      `insert into definitions (lang, word, kind, status) values ($1, $2, $3, 'pending')
-       on conflict (lang, word) do update set status = 'pending', error = null`,
-      [lang, word, input.kind],
+      `insert into definitions (lang, word, tier, kind, status)
+       values ($1, $2, $3, $4, 'pending')
+       on conflict (lang, word, tier) do update set status = 'pending', error = null`,
+      [lang, word, input.tier, input.kind],
     )
-    emit(wordDefinitionRequested, { lang, word })
+    emit(wordDefinitionRequested, { lang, word, tier: input.tier })
   })
 
   /* Internal intents — reachable only with ctx.internal (the gloss worker). */
@@ -231,19 +232,29 @@ export async function createApp(connectionString: string): Promise<InterlinearAp
   app.handle(saveDefinition, async ({ input, tx, emit }) => {
     if (input.definition) {
       await tx.query(
-        `update definitions set status = 'ready', definition = $3, error = null
-         where lang = $1 and word = $2`,
-        [input.lang, input.word, JSON.stringify(input.definition)],
+        `update definitions set status = 'ready', definition = $4, error = null
+         where lang = $1 and word = $2 and tier = $3`,
+        [input.lang, input.word, input.tier, JSON.stringify(input.definition)],
       )
-      emit(wordDefined, { lang: input.lang, word: input.word, definition: input.definition })
+      emit(wordDefined, {
+        lang: input.lang,
+        word: input.word,
+        tier: input.tier,
+        definition: input.definition,
+      })
     } else {
       const error = input.error ?? 'definition lookup failed'
       await tx.query(
-        `update definitions set status = 'failed', error = $3
-         where lang = $1 and word = $2`,
-        [input.lang, input.word, error],
+        `update definitions set status = 'failed', error = $4
+         where lang = $1 and word = $2 and tier = $3`,
+        [input.lang, input.word, input.tier, error],
       )
-      emit(wordDefinitionFailed, { lang: input.lang, word: input.word, error })
+      emit(wordDefinitionFailed, {
+        lang: input.lang,
+        word: input.word,
+        tier: input.tier,
+        error,
+      })
     }
   })
 
@@ -280,8 +291,8 @@ export async function createApp(connectionString: string): Promise<InterlinearAp
       const word = normalizeWord(params.word)
       const result = await tx.query(
         `select status, definition, error from definitions
-         where lang = $1 and word = $2`,
-        [params.lang, word],
+         where lang = $1 and word = $2 and tier = $3`,
+        [params.lang, word, params.tier],
       )
       const row = result.rows[0]
       if (!row) return { status: 'none', definition: null, error: null }

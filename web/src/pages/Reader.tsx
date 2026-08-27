@@ -45,15 +45,25 @@ export function Reader() {
 
   const { text, chunks } = detail.data
 
-  function selectWord(word: Word) {
+  // Fired on pointerdown: kick off the server-side lookup before the click
+  // even lands, so the entry is a few ms closer when the sidebar opens.
+  function prefetchWord(word: Word) {
     const normalized = normalizeWord(word.w)
     if (!normalized || detail.status !== 'ready' || !detail.data) return
-    setSelected({ word: normalized, gloss: word.g || null })
     void send(defineWord, {
       lang: detail.data.text.lang,
       word: normalized,
       kind: detail.data.text.kind,
+      tier: 'fast',
     })
+  }
+
+  // Fired on click: only now open the sidebar, so touch-scrolling over a
+  // word doesn't yank it open.
+  function selectWord(word: Word) {
+    const normalized = normalizeWord(word.w)
+    if (!normalized) return
+    setSelected({ word: normalized, gloss: word.g || null })
   }
 
   async function remove() {
@@ -116,6 +126,7 @@ export function Reader() {
                 words={chunk.words}
                 showGlosses={showGlosses}
                 onWordClick={selectWord}
+                onWordDown={prefetchWord}
                 selectedWord={selected?.word}
               />
             ) : (
