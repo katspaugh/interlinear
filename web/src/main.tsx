@@ -7,7 +7,10 @@ import { adminHeaders } from './admin.js'
 import { App } from './App.js'
 import { Home } from './pages/Home.js'
 import { Reader } from './pages/Reader.js'
+import { applySite } from './site.js'
 import './styles.css'
+
+applySite()
 
 const client = createClient({ headers: adminHeaders })
 

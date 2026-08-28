@@ -64,6 +64,8 @@ domains:
   - domain: www.interlinear.cc
     type: ALIAS
     zone: interlinear.cc
+  # sutta.stream is the same app wearing its sutta skin: the server picks the
+  # branding by Host header (see shared/src/sites.ts).
   - domain: sutta.stream
     type: ALIAS
     zone: sutta.stream

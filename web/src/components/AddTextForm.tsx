@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSend } from '@intenteffect/react'
 import { addText, textAdded, TEXT_KINDS } from '@interlinear/shared'
 import { getAdminToken, setAdminToken } from '../admin.js'
+import { site } from '../site.js'
 
 export function AddTextForm() {
   const send = useSend()
@@ -45,7 +46,9 @@ export function AddTextForm() {
 
   return (
     <form className="add-form" onSubmit={(e) => void onSubmit(e)}>
-      <h2 className="add-form__heading">Add a text</h2>
+      <h2 className="add-form__heading">
+        {site.id === 'sutta' ? 'Add a sutta' : 'Add a text'}
+      </h2>
 
       <div className="add-form__row">
         <label>

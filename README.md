@@ -36,6 +36,22 @@ Texts have a **language** and a **type preset** (sutta/scripture, poetry,
 prose, technical documentation, fiction) that tunes how the LLM glosses,
 translates, and defines words.
 
+## Two sites, one app
+
+The same deployment serves two brands from one database, picked by hostname
+(`shared/src/sites.ts`):
+
+- **[interlinear.cc](https://interlinear.cc)** — the generic site: any text,
+  any language. The original 2015 blue design.
+- **[sutta.stream](https://sutta.stream)** — the same library filtered to
+  suttas, in a warm, earthy skin aimed at Pali study.
+
+The client resolves its site from `location.hostname` (copy, theme class,
+library filter); the server rewrites `index.html`'s title, description,
+favicon, and Open Graph tags per `Host` header (`server/src/static.ts`), so
+links unfurl with the right branding. Because the database is shared, every
+gloss and dictionary entry generated on one site serves the other.
+
 ## Development
 
 Requires Node ≥ 22, pnpm (via `corepack enable`), and Docker (for Postgres).

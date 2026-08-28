@@ -1,4 +1,48 @@
-/* interlinear — port of the original 2015 interlinear.io design */
+/* interlinear — port of the original 2015 interlinear.io design.
+ *
+ * All brand colors live in custom properties on :root; a theme class on
+ * <html> (set from the hostname, see site.ts) swaps the palette. The default
+ * is the original interlinear blue; .theme-sutta is the warm, earthy skin
+ * for sutta.stream. */
+
+:root {
+  --bg: #00adea;
+  --chrome: #008acc;
+  --accent: #00aced;
+  --accent-strong: #008acc;
+  --highlight: #b1e7f8;
+  --paper: #fff;
+  --paper-fade: rgba(255, 255, 255, 0);
+  --ink: #333;
+  --muted: #777;
+  --gloss: #aaa;
+  --gloss-1: #ccc;
+  --gloss-2: #ddd;
+  --gloss-3: #eee;
+  --gloss-4: #fff;
+  --danger: #e53b3a;
+  --form-bg: rgba(0, 138, 204, 0.85);
+  --font-ui: Helvetica, Arial, sans-serif;
+  --font-reading: Helvetica, Arial, sans-serif;
+}
+
+/* sutta.stream: monastic-robe ochres and palm-leaf parchment */
+:root.theme-sutta {
+  --bg: #9a6434;
+  --chrome: #6e441f;
+  --accent: #b45309;
+  --accent-strong: #8a4a12;
+  --highlight: #f0dcb4;
+  --paper: #faf5ea;
+  --paper-fade: rgba(250, 245, 234, 0);
+  --ink: #3b3128;
+  --gloss-1: #c9c2b4;
+  --gloss-2: #d9d2c4;
+  --gloss-3: #e9e2d4;
+  --gloss-4: #faf5ea;
+  --form-bg: rgba(110, 68, 31, 0.88);
+  --font-reading: 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+}
 
 * {
   box-sizing: border-box;
@@ -13,8 +57,8 @@ body,
 }
 
 body {
-  background-color: #00adea;
-  font-family: Helvetica, Arial, sans-serif;
+  background-color: var(--bg);
+  font-family: var(--font-ui);
   font-size: 16px;
   color: #fff;
 }
@@ -34,6 +78,11 @@ body {
   background-position: top center;
   background-repeat: repeat-y;
   background-size: cover;
+}
+
+.theme-sutta .page_home {
+  background-image: linear-gradient(165deg, #4e3014 0%, #8a5a2b 55%, #b07a42 100%);
+  background-attachment: fixed;
 }
 
 .page_home .header {
@@ -73,19 +122,19 @@ a {
 
 .btn_transparent:hover,
 .btn_transparent:focus {
-  color: #b1e7f8;
-  border-color: #b1e7f8;
+  color: var(--highlight);
+  border-color: var(--highlight);
 }
 
 .btn_transparent-blue {
   background: transparent;
-  border: 1px solid #008acc;
-  color: #008acc;
+  border: 1px solid var(--accent-strong);
+  color: var(--accent-strong);
 }
 
 /* Header */
 .header {
-  background-color: #008acc;
+  background-color: var(--chrome);
   line-height: 50px;
 }
 
@@ -107,6 +156,10 @@ a {
   text-decoration: none;
 }
 
+.logo__dot {
+  color: var(--highlight);
+}
+
 .header__status {
   font-size: 13px;
   opacity: 0.8;
@@ -114,7 +167,7 @@ a {
 
 /* Footer */
 .footer {
-  background-color: #008acc;
+  background-color: var(--chrome);
   padding: 15px 0;
   margin-top: 40px;
 }
@@ -173,8 +226,8 @@ a {
 .card {
   display: block;
   text-decoration: none;
-  background: #fff;
-  border: 1px solid #00aced;
+  background: var(--paper);
+  border: 1px solid var(--accent);
   border-radius: 4px;
   position: relative;
   height: 240px;
@@ -183,7 +236,7 @@ a {
 }
 
 .card__heading {
-  background: #00aced;
+  background: var(--accent);
   padding: 10px 15px;
 }
 
@@ -194,7 +247,7 @@ a {
   top: 14px;
   right: -30px;
   transform: rotate(45deg);
-  background: #008acc;
+  background: var(--accent-strong);
   color: #fff;
   font-size: 11px;
   letter-spacing: 2px;
@@ -230,6 +283,7 @@ a {
 .card__body {
   padding: 10px 15px;
   font-size: 15px;
+  font-family: var(--font-reading);
 }
 
 .card__body::after {
@@ -241,11 +295,11 @@ a {
   z-index: 1;
   bottom: 0;
   left: 0;
-  background: linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
+  background: linear-gradient(to top, var(--paper) 0%, var(--paper-fade) 100%);
 }
 
 .card__pending {
-  color: #777;
+  color: var(--muted);
   font-style: italic;
 }
 
@@ -254,7 +308,7 @@ a {
   z-index: 2;
   bottom: 20px;
   left: 15px;
-  color: #777;
+  color: var(--muted);
   font-size: 13px;
   font-style: italic;
 }
@@ -266,19 +320,19 @@ a {
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: #00aced;
+  background: var(--accent);
   color: #fff;
   padding: 6px 16px;
   border-radius: 4px;
 }
 
 .card:hover .card__button {
-  background: #008acc;
+  background: var(--accent-strong);
 }
 
 /* Add form */
 .add-form {
-  background: rgba(0, 138, 204, 0.85);
+  background: var(--form-bg);
   border-radius: 4px;
   padding: 20px 25px 25px;
   max-width: 720px;
@@ -315,8 +369,8 @@ a {
   padding: 7px 10px;
   border: none;
   border-radius: 4px;
-  color: #333;
-  background: #fff;
+  color: var(--ink);
+  background: var(--paper);
 }
 
 .add-form textarea {
@@ -339,19 +393,21 @@ a {
 .reader__text {
   flex: 2;
   font-size: 22px;
-  background: #fff;
-  color: #333;
+  background: var(--paper);
+  color: var(--ink);
   padding: 30px;
   border-radius: 2px;
+  font-family: var(--font-reading);
 }
 
 .reader__controls {
   float: right;
   font-size: 14px;
-  color: #777;
+  color: var(--muted);
   display: flex;
   gap: 15px;
   align-items: center;
+  font-family: var(--font-ui);
 }
 
 .reader__toggle {
@@ -363,19 +419,19 @@ a {
   border: none;
   font-size: 14px;
   font-family: inherit;
-  color: #777;
+  color: var(--muted);
   cursor: pointer;
   padding: 0;
 }
 
 .reader__delete:hover {
-  color: #e53b3a;
+  color: var(--danger);
 }
 
 .reader__heading {
   margin: 0 0 40px;
   padding: 5px 20px;
-  border-left: 4px solid #008acc;
+  border-left: 4px solid var(--accent-strong);
 }
 
 .reader__title {
@@ -388,7 +444,7 @@ a {
 .reader__subtitle {
   font-size: 17px;
   display: block;
-  color: #777;
+  color: var(--muted);
 }
 
 .reader__source {
@@ -398,12 +454,12 @@ a {
 .reader__glossing,
 .reader__failed {
   font-size: 15px;
-  color: #777;
+  color: var(--muted);
   font-style: italic;
 }
 
 .reader__failed {
-  color: #e53b3a;
+  color: var(--danger);
 }
 
 .reader__chunk {
@@ -417,9 +473,9 @@ a {
 
 .reader__translation {
   font-size: 16px;
-  color: #777;
+  color: var(--muted);
   font-style: italic;
-  border-left: 3px solid #b1e7f8;
+  border-left: 3px solid var(--highlight);
   padding-left: 12px;
   margin: 12px 0 0;
 }
@@ -445,7 +501,7 @@ a {
 .word__gloss {
   display: block;
   white-space: nowrap;
-  color: #aaa;
+  color: var(--gloss);
   font-size: 12px;
   min-height: 14px;
 }
@@ -465,27 +521,27 @@ a {
 
 .word_clickable:hover,
 .word_selected {
-  background: #b1e7f8;
+  background: var(--highlight);
   border-radius: 2px;
 }
 
 .word_clickable:hover .word__gloss,
 .word_selected .word__gloss {
-  color: #777;
+  color: var(--muted);
 }
 
 /* Repeated words: their glosses fade away */
 .word_occur_1 .word__gloss {
-  color: #ccc;
+  color: var(--gloss-1);
 }
 .word_occur_2 .word__gloss {
-  color: #ddd;
+  color: var(--gloss-2);
 }
 .word_occur_3 .word__gloss {
-  color: #eee;
+  color: var(--gloss-3);
 }
 .word_occur_4 .word__gloss {
-  color: #fff;
+  color: var(--gloss-4);
 }
 
 /* Cards render a smaller interlinear */
@@ -499,7 +555,7 @@ a {
 }
 
 .card .word__text {
-  color: #333;
+  color: var(--ink);
 }
 
 /* Sidebar */
@@ -538,8 +594,8 @@ a {
 }
 
 .definition__panel {
-  background: #fff;
-  color: #333;
+  background: var(--paper);
+  color: var(--ink);
   padding: 15px;
   border-radius: 2px;
 }
@@ -548,12 +604,12 @@ a {
   font-size: 16px;
   padding: 5px 10px;
   margin: 5px 5px 20px;
-  border-left: 4px solid #008acc;
+  border-left: 4px solid var(--accent-strong);
 }
 
 .definition__term-note {
   font-style: italic;
-  color: #777;
+  color: var(--muted);
 }
 
 .definition__sections {
@@ -570,7 +626,7 @@ a {
 }
 
 .definition__grammar {
-  color: #777;
+  color: var(--muted);
   font-style: italic;
   margin: 0 0 10px;
 }
@@ -587,8 +643,8 @@ a {
 .definition__badge {
   font-size: 11px;
   font-weight: normal;
-  color: #008acc;
-  border: 1px solid #b1e7f8;
+  color: var(--accent-strong);
+  border: 1px solid var(--highlight);
   border-radius: 3px;
   padding: 1px 6px;
   margin-left: 8px;
@@ -614,7 +670,7 @@ a {
 }
 
 .definition__error {
-  color: #e53b3a;
+  color: var(--danger);
 }
 
 /* Loading animation (SpinKit three-bounce) */
@@ -672,7 +728,7 @@ a {
     height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
-    background-color: #00adea;
+    background-color: var(--bg);
     padding: 30px 15px;
     transform: translateX(-100%);
     transition: transform 300ms ease-out;
