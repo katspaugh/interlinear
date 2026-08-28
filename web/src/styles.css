@@ -609,6 +609,14 @@ a {
   font-family: var(--font-ui);
 }
 
+/* The checkboxes wrap as one unit: a line break may fall between the
+   gloss-mode toggle and this group, but never between the checkboxes. */
+.reader__toggles {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
 .reader__toggle {
   cursor: pointer;
   white-space: nowrap;

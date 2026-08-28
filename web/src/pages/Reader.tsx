@@ -153,35 +153,37 @@ export function Reader() {
               </button>
             ))}
           </div>
-          {hasMorphs && (
-            <label
-              className="reader__toggle"
-              title="Underline each word's morphemes: prefix, root, ending"
-            >
+          <div className="reader__toggles">
+            {hasMorphs && (
+              <label
+                className="reader__toggle"
+                title="Underline each word's morphemes: prefix, root, ending"
+              >
+                <input
+                  type="checkbox"
+                  checked={showMorphs}
+                  onChange={(e) => setShowMorphs(e.target.checked)}
+                />{' '}
+                Morphemes
+              </label>
+            )}
+            <label className="reader__toggle">
               <input
                 type="checkbox"
-                checked={showMorphs}
-                onChange={(e) => setShowMorphs(e.target.checked)}
+                checked={showTranslation}
+                onChange={(e) => setShowTranslation(e.target.checked)}
               />{' '}
-              Morphemes
+              Translation
             </label>
-          )}
-          <label className="reader__toggle">
-            <input
-              type="checkbox"
-              checked={showTranslation}
-              onChange={(e) => setShowTranslation(e.target.checked)}
-            />{' '}
-            Translation
-          </label>
-          <label className="reader__toggle" title="Remembered in this browser only">
-            <input
-              type="checkbox"
-              checked={isRead(slug)}
-              onChange={() => toggleRead(slug)}
-            />{' '}
-            Read
-          </label>
+            <label className="reader__toggle" title="Remembered in this browser only">
+              <input
+                type="checkbox"
+                checked={isRead(slug)}
+                onChange={() => toggleRead(slug)}
+              />{' '}
+              Read
+            </label>
+          </div>
           {!text.builtin && adminUiVisible() && (
             <button className="reader__delete" onClick={() => void remove()}>
               🗑 Delete text
