@@ -10,12 +10,13 @@ import type { SeedText } from './seed-data.js'
 
 export const MN_SEED_TEXTS: SeedText[] = [
   {
-    slug: "mulapariyaya-sutta",
+    slug: "mn1",
     title: "The Root of All Things",
     origTitle: "Mūlapariyāyasutta",
     source: "Majjhima Nikāya 1",
     lang: "Pali",
     kind: "sutta",
+    translator: "Bhikkhu Sujato, SuttaCentral",
     chunks: [
       {
         lines: [
@@ -1322,12 +1323,13 @@ export const MN_SEED_TEXTS: SeedText[] = [
     ],
   },
   {
-    slug: "sabbasava-sutta",
+    slug: "mn2",
     title: "All the Defilements",
     origTitle: "Sabbāsavasutta",
     source: "Majjhima Nikāya 2",
     lang: "Pali",
     kind: "sutta",
+    translator: "Bhikkhu Sujato, SuttaCentral",
     chunks: [
       {
         lines: [
@@ -1600,12 +1602,13 @@ export const MN_SEED_TEXTS: SeedText[] = [
     ],
   },
   {
-    slug: "dhammadayada-sutta",
+    slug: "mn3",
     title: "Heirs in the Teaching",
     origTitle: "Dhammadāyādasutta",
     source: "Majjhima Nikāya 3",
     lang: "Pali",
     kind: "sutta",
+    translator: "Bhikkhu Sujato, SuttaCentral",
     chunks: [
       {
         lines: [
@@ -1781,12 +1784,13 @@ export const MN_SEED_TEXTS: SeedText[] = [
     ],
   },
   {
-    slug: "bhayabherava-sutta",
+    slug: "mn4",
     title: "Fear and Dread",
     origTitle: "Bhayabheravasutta",
     source: "Majjhima Nikāya 4",
     lang: "Pali",
     kind: "sutta",
+    translator: "Bhikkhu Sujato, SuttaCentral",
     chunks: [
       {
         lines: [
@@ -2109,12 +2113,13 @@ export const MN_SEED_TEXTS: SeedText[] = [
     ],
   },
   {
-    slug: "anangana-sutta",
+    slug: "mn5",
     title: "Unblemished",
     origTitle: "Anaṅgaṇasutta",
     source: "Majjhima Nikāya 5",
     lang: "Pali",
     kind: "sutta",
+    translator: "Bhikkhu Sujato, SuttaCentral",
     chunks: [
       {
         lines: [
@@ -2460,12 +2465,13 @@ export const MN_SEED_TEXTS: SeedText[] = [
     ],
   },
   {
-    slug: "akankheyya-sutta",
+    slug: "mn6",
     title: "One Might Wish",
     origTitle: "Ākaṅkheyyasutta",
     source: "Majjhima Nikāya 6",
     lang: "Pali",
     kind: "sutta",
+    translator: "Bhikkhu Sujato, SuttaCentral",
     chunks: [
       {
         lines: [
@@ -2619,12 +2625,13 @@ export const MN_SEED_TEXTS: SeedText[] = [
     ],
   },
   {
-    slug: "vattha-sutta",
+    slug: "mn7",
     title: "The Simile of the Cloth",
     origTitle: "Vatthasutta",
     source: "Majjhima Nikāya 7",
     lang: "Pali",
     kind: "sutta",
+    translator: "Bhikkhu Sujato, SuttaCentral",
     chunks: [
       {
         lines: [
@@ -2884,12 +2891,13 @@ export const MN_SEED_TEXTS: SeedText[] = [
     ],
   },
   {
-    slug: "sallekha-sutta",
+    slug: "mn8",
     title: "Self-Effacement",
     origTitle: "Sallekhasutta",
     source: "Majjhima Nikāya 8",
     lang: "Pali",
     kind: "sutta",
+    translator: "Bhikkhu Sujato, SuttaCentral",
     chunks: [
       {
         lines: [
@@ -3172,12 +3180,13 @@ export const MN_SEED_TEXTS: SeedText[] = [
     ],
   },
   {
-    slug: "sammaditthi-sutta",
+    slug: "mn9",
     title: "Right View",
     origTitle: "Sammādiṭṭhisutta",
     source: "Majjhima Nikāya 9",
     lang: "Pali",
     kind: "sutta",
+    translator: "Bhikkhu Sujato, SuttaCentral",
     chunks: [
       {
         lines: [
@@ -3775,6 +3784,7 @@ export const MN_SEED_TEXTS: SeedText[] = [
     source: "Majjhima Nikāya 10",
     lang: "Pali",
     kind: "sutta",
+    translator: "Bhikkhu Sujato, SuttaCentral",
     chunks: [
       {
         lines: [
@@ -4292,12 +4302,13 @@ export const MN_SEED_TEXTS: SeedText[] = [
     ],
   },
   {
-    slug: "culasihanada-sutta",
+    slug: "mn11",
     title: "The Shorter Discourse on the Lion’s Roar",
     origTitle: "Cūḷasīhanādasutta",
     source: "Majjhima Nikāya 11",
     lang: "Pali",
     kind: "sutta",
+    translator: "Bhikkhu Sujato, SuttaCentral",
     chunks: [
       {
         lines: [
@@ -4517,12 +4528,13 @@ export const MN_SEED_TEXTS: SeedText[] = [
     ],
   },
   {
-    slug: "mahasihanada-sutta",
+    slug: "mn12",
     title: "The Longer Discourse on the Lion’s Roar",
     origTitle: "Mahāsīhanādasutta",
     source: "Majjhima Nikāya 12",
     lang: "Pali",
     kind: "sutta",
+    translator: "Bhikkhu Sujato, SuttaCentral",
     chunks: [
       {
         lines: [

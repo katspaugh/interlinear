@@ -15,12 +15,25 @@ const TRANSLATOR = 'Bhikkhu Sujato, SuttaCentral'
 /** Pause before each API request — SuttaCentral is a nonprofit; be gentle. */
 const FETCH_DELAY_MS = 250
 
-/** Suttas already in the hand-glossed seed library under a friendlier slug —
- * skipped so the library doesn't show the same discourse twice. */
+/** Suttas already in the pre-glossed seed library — skipped so the library
+ * doesn't show the same discourse twice, and so a forced reimport can't
+ * downgrade a fully glossed text back to 'unglossed'. Most seeds live under
+ * a friendlier slug; MN 1–12 (except mn10) keep their uid slugs. */
 const SEEDED: Record<string, string> = {
   'snp1.8': 'metta-sutta',
   'snp2.4': 'mangala-sutta',
+  mn1: 'mn1',
+  mn2: 'mn2',
+  mn3: 'mn3',
+  mn4: 'mn4',
+  mn5: 'mn5',
+  mn6: 'mn6',
+  mn7: 'mn7',
+  mn8: 'mn8',
+  mn9: 'mn9',
   mn10: 'satipatthana-sutta',
+  mn11: 'mn11',
+  mn12: 'mn12',
   mn21: 'kakacupama-sutta',
   mn118: 'anapanassati-sutta',
   'sn56.11': 'four-noble-truths',

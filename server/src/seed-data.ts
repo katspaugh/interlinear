@@ -18,6 +18,9 @@ export interface SeedText {
   source: string
   lang: string
   kind: string
+  /** Credit for the chunk translations, when they are someone's published
+   * translation (e.g. Bhikkhu Sujato's) rather than written for the seed. */
+  translator?: string
   chunks: SeedChunk[]
 }
 

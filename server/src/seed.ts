@@ -48,9 +48,9 @@ export async function seed(pool: pg.Pool): Promise<void> {
 
     const id = crypto.randomUUID()
     await pool.query(
-      `insert into texts (id, slug, title, orig_title, source, lang, kind, status, builtin)
-       values ($1, $2, $3, $4, $5, $6, $7, 'ready', true)`,
-      [id, text.slug, text.title, text.origTitle, text.source, text.lang, text.kind],
+      `insert into texts (id, slug, title, orig_title, source, lang, kind, status, builtin, translator)
+       values ($1, $2, $3, $4, $5, $6, $7, 'ready', true, $8)`,
+      [id, text.slug, text.title, text.origTitle, text.source, text.lang, text.kind, text.translator ?? null],
     )
     for (const [idx, chunk] of text.chunks.entries()) {
       await pool.query(
