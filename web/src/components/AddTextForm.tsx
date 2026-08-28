@@ -5,6 +5,26 @@ import { addText, textAdded, TEXT_KINDS } from '@interlinear/shared'
 import { getAdminToken, setAdminToken } from '../admin.js'
 import { site } from '../site.js'
 
+/** Per-site example text in the form's placeholders and defaults. */
+const EXAMPLES =
+  site.id === 'sutta'
+    ? {
+        title: 'The Discourse on Mindfulness',
+        origTitle: 'Satipaṭṭhāna Sutta',
+        source: 'Majjhima Nikāya 10',
+        lang: 'Pali',
+        kind: 'sutta',
+        text: 'Karaṇīyamatthakusalena,\nyantaṃ santaṃ padaṃ abhisamecca…',
+      }
+    : {
+        title: 'Sweet Porridge',
+        origTitle: 'Der süße Brei',
+        source: 'Brüder Grimm — KHM 103',
+        lang: 'German',
+        kind: 'prose',
+        text: 'Es war einmal ein armes frommes Mädchen…',
+      }
+
 export function AddTextForm() {
   const send = useSend()
   const navigate = useNavigate()
@@ -12,8 +32,8 @@ export function AddTextForm() {
   const [title, setTitle] = useState('')
   const [origTitle, setOrigTitle] = useState('')
   const [source, setSource] = useState('')
-  const [lang, setLang] = useState('Pali')
-  const [kind, setKind] = useState('sutta')
+  const [lang, setLang] = useState(site.id === 'sutta' ? 'Pali' : '')
+  const [kind, setKind] = useState(EXAMPLES.kind)
   const [original, setOriginal] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -57,7 +77,7 @@ export function AddTextForm() {
             type="text"
             required
             value={title}
-            placeholder="The Discourse on Mindfulness"
+            placeholder={EXAMPLES.title}
             onChange={(e) => setTitle(e.target.value)}
           />
         </label>
@@ -66,7 +86,7 @@ export function AddTextForm() {
           <input
             type="text"
             value={origTitle}
-            placeholder="Satipaṭṭhāna Sutta"
+            placeholder={EXAMPLES.origTitle}
             onChange={(e) => setOrigTitle(e.target.value)}
           />
         </label>
@@ -78,7 +98,7 @@ export function AddTextForm() {
           <input
             type="text"
             value={source}
-            placeholder="Majjhima Nikāya 10"
+            placeholder={EXAMPLES.source}
             onChange={(e) => setSource(e.target.value)}
           />
         </label>
@@ -88,6 +108,7 @@ export function AddTextForm() {
             type="text"
             required
             value={lang}
+            placeholder={EXAMPLES.lang}
             onChange={(e) => setLang(e.target.value)}
           />
         </label>
@@ -119,7 +140,7 @@ export function AddTextForm() {
           required
           rows={8}
           value={original}
-          placeholder={'Karaṇīyamatthakusalena,\nyantaṃ santaṃ padaṃ abhisamecca…'}
+          placeholder={EXAMPLES.text}
           onChange={(e) => setOriginal(e.target.value)}
         />
       </label>

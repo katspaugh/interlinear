@@ -36,7 +36,7 @@ function Footer() {
   }
   return (
     <p>
-      Made in 2015, reborn in 2026 for the Pali suttas. Interlinear glossing
+      Made in 2015, reborn in 2026. Interlinear glossing
       and dictionary by{' '}
       <a href="https://www.anthropic.com/claude" target="_blank" rel="nofollow noreferrer">
         Claude

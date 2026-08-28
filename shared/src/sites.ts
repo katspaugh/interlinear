@@ -40,8 +40,9 @@ export const INTERLINEAR_SITE: SiteConfig = {
   name: 'interlinear',
   title: 'interlinear — read any text word by word',
   description:
-    'Read Pali suttas — and any other text in any language — with an ' +
-    'interlinear gloss above every word and word-by-word dictionary lookups.',
+    'Read any text in any language with an interlinear gloss above every ' +
+    'word. Tap a word for a full dictionary entry: grammar, meanings, and ' +
+    'etymology.',
   themeClass: '',
   themeColor: '#008acc',
   favicon: '/favicon.ico',

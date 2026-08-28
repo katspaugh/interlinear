@@ -1,9 +1,8 @@
 import crypto from 'node:crypto'
 import type pg from 'pg'
-import { splitChunks, type Word } from '@interlinear/shared'
-import { glossAvailable } from './llm.js'
-import { SEED_TEXTS, type SeedChunk } from './seed-data.js'
-import { RAW_SEED_TEXTS } from './seed-data-raw.js'
+import type { Word } from '@interlinear/shared'
+import { SEED_TEXTS, type SeedChunk, type SeedText } from './seed-data.js'
+import { FICTION_SEED_TEXTS } from './seed-data-fiction.js'
 
 function chunkWords(chunk: SeedChunk): Word[] {
   return chunk.lines.flatMap((line, lineIdx) =>
@@ -23,11 +22,24 @@ function chunkOriginal(chunk: SeedChunk): string {
  * Runs at boot, before any client is connected, so it writes directly —
  * no events need to be emitted. */
 export async function seed(pool: pg.Pool): Promise<void> {
-  for (const text of SEED_TEXTS) {
-    const existing = await pool.query(`select 1 from texts where slug = $1`, [
-      text.slug,
-    ])
-    if ((existing.rowCount ?? 0) > 0) continue
+  const all: SeedText[] = [...SEED_TEXTS, ...FICTION_SEED_TEXTS]
+  for (const text of all) {
+    const existing = await pool.query<{ id: string; status: string }>(
+      `select id, status from texts where slug = $1`,
+      [text.slug],
+    )
+    const row = existing.rows[0]
+    if (row) {
+      if (row.status === 'ready') continue
+      // An earlier deploy seeded this text without glosses (or its glossing
+      // failed); replace it with the pre-glossed version. Chunks cascade.
+      const deleted = await pool.query(
+        `delete from texts where id = $1 and builtin = true`,
+        [row.id],
+      )
+      if (deleted.rowCount === 0) continue // a user's text owns the slug
+      console.log(`[seed] replacing unglossed "${text.title}" (${text.slug})`)
+    }
 
     const id = crypto.randomUUID()
     await pool.query(
@@ -43,33 +55,5 @@ export async function seed(pool: pg.Pool): Promise<void> {
       )
     }
     console.log(`[seed] added "${text.title}" (${text.slug})`)
-  }
-
-  // Raw (unglossed) seeds go in as 'glossing' and are picked up by the
-  // gloss worker. Without a gloss key the worker would only mark them
-  // failed, so they wait for a boot that can actually gloss them.
-  if (!glossAvailable()) {
-    console.log('[seed] no gloss API key — skipping raw seed texts')
-    return
-  }
-  for (const text of RAW_SEED_TEXTS) {
-    const existing = await pool.query(`select 1 from texts where slug = $1`, [
-      text.slug,
-    ])
-    if ((existing.rowCount ?? 0) > 0) continue
-
-    const id = crypto.randomUUID()
-    await pool.query(
-      `insert into texts (id, slug, title, orig_title, source, lang, kind, status, builtin)
-       values ($1, $2, $3, $4, $5, $6, $7, 'glossing', true)`,
-      [id, text.slug, text.title, text.origTitle, text.source, text.lang, text.kind],
-    )
-    for (const [idx, original] of splitChunks(text.text).entries()) {
-      await pool.query(
-        `insert into text_chunks (text_id, idx, original) values ($1, $2, $3)`,
-        [id, idx, original],
-      )
-    }
-    console.log(`[seed] added "${text.title}" (${text.slug}) — queued for glossing`)
   }
 }

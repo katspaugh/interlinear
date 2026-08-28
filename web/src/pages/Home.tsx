@@ -21,8 +21,8 @@ function Hero() {
   return (
     <p>
       Languages are best learned by&nbsp;reading. We&nbsp;built this place
-      to&nbsp;read the Buddha's discourses in&nbsp;Pali — or&nbsp;any text
-      in&nbsp;any language — with an&nbsp;<b>interlinear gloss</b> above every
+      to&nbsp;read texts in&nbsp;their original language — any text,
+      any&nbsp;language — with an&nbsp;<b>interlinear gloss</b> above every
       word. Tap a&nbsp;word for a&nbsp;full <b>dictionary entry</b>: grammar,
       meanings, and etymology, written by&nbsp;an&nbsp;LLM and shared
       by&nbsp;every reader.

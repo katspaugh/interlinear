@@ -48,12 +48,12 @@ The same deployment serves two brands from one database, picked by hostname
 - **[sutta.stream](https://sutta.stream)** — the same library filtered to
   suttas, in a warm, earthy skin aimed at Pali study.
 
-The seed library has two tiers (`server/src/seed-data.ts` and
-`seed-data-raw.ts`): the Pali suttas ship hand-glossed so the app works with
-no API key, while the fiction texts are seeded unglossed (public-domain
-Wikisource transcriptions) and glossed by the background worker on the first
-boot that has a gloss API key. Japanese seeds are pre-segmented with spaces
-(wakachigaki), since tokenization is whitespace-based.
+The whole seed library (`server/src/seed-data.ts` for the suttas,
+`seed-data-fiction.ts` for the fiction shelf) ships pre-glossed, so no
+gloss API is needed to serve it. The fiction originals are public-domain
+Wikisource transcriptions, verified character-for-character; Japanese seeds
+are pre-segmented with spaces (wakachigaki), since tokenization is
+whitespace-based.
 
 The client resolves its site from `location.hostname` (copy, theme class,
 library filter); the server rewrites `index.html`'s title, description,
@@ -69,7 +69,7 @@ Requires Node ≥ 22, pnpm (via `corepack enable`), and Docker (for Postgres).
 docker compose up -d     # Postgres on :5432 (dev/dev, db "interlinear")
 pnpm install
 export ANTHROPIC_API_KEY=sk-ant-…   # optional: without it, only the
-                                    # pre-glossed sample suttas work
+                                    # pre-glossed seed texts work
 pnpm dev                 # server on :3001 + Vite on :5173
 ```
 
