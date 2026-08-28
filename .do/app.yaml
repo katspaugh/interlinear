@@ -56,3 +56,11 @@ databases:
   - name: db
     engine: PG
     production: false
+
+domains:
+  - domain: interlinear.cc
+    type: PRIMARY
+    zone: interlinear.cc
+  - domain: www.interlinear.cc
+    type: ALIAS
+    zone: interlinear.cc
