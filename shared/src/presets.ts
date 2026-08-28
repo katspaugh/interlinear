@@ -24,6 +24,14 @@ export const TEXT_KINDS: TextKindPreset[] = [
       'Emphasize the word’s doctrinal usage in the canon (with the tradition’s established English renderings) in the style of the PTS dictionary. Pali opens up through morphology: relate roots to their Sanskrit forms and Indo-European cognates, and show how spatial prefixes (upa-, sam-, abhi-, paṭi-, vi-, ni-) keep their concrete imagery inside abstract doctrinal terms — e.g. samādhi as saṁ + ā + √dhā, "placing together", hence collectedness.',
   },
   {
+    id: 'scripture',
+    label: 'Scripture',
+    glossHint:
+      'This is religious scripture. Use established renderings from the text’s scholarly and liturgical translation tradition; respect formulaic repetition — repeat glosses verbatim for repeated formulas. The translation should be clear, measured, and faithful to the content.',
+    definitionHint:
+      'Emphasize the word’s usage in the scriptural corpus and its established renderings in the translation tradition, alongside the plain meanings.',
+  },
+  {
     id: 'poetry',
     label: 'Poetry',
     glossHint:

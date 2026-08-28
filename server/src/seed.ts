@@ -4,6 +4,7 @@ import type { Word } from '@interlinear/shared'
 import { SEED_TEXTS, type SeedChunk, type SeedText } from './seed-data.js'
 import { FICTION_SEED_TEXTS } from './seed-data-fiction.js'
 import { MN_SEED_TEXTS } from './seed-data-mn.js'
+import { CLASSIC_SEED_TEXTS } from './seed-data-classics.js'
 
 function chunkWords(chunk: SeedChunk): Word[] {
   return chunk.lines.flatMap((line, lineIdx) =>
@@ -23,7 +24,7 @@ function chunkOriginal(chunk: SeedChunk): string {
  * Runs at boot, before any client is connected, so it writes directly —
  * no events need to be emitted. */
 export async function seed(pool: pg.Pool): Promise<void> {
-  const all: SeedText[] = [...SEED_TEXTS, ...MN_SEED_TEXTS, ...FICTION_SEED_TEXTS]
+  const all: SeedText[] = [...SEED_TEXTS, ...MN_SEED_TEXTS, ...FICTION_SEED_TEXTS, ...CLASSIC_SEED_TEXTS]
   for (const text of all) {
     const existing = await pool.query<{ id: string; status: string; chunks: number }>(
       `select t.id, t.status,
