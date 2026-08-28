@@ -405,6 +405,14 @@ a {
   margin-bottom: 40px;
 }
 
+/* Infinite-scroll sentinel below the cards; loads the next batch when it
+   nears the viewport. */
+.home__more {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 30px;
+}
+
 .home__error {
   text-align: center;
   text-shadow: 0 0 2px #000;

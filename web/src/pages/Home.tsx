@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useProjection } from '@intenteffect/react'
 import { filterLibrary, searchLibrary, textLibrary, type Word } from '@interlinear/shared'
@@ -75,9 +75,14 @@ function Hero() {
   )
 }
 
+/** How many library entries render initially and per scroll-triggered batch. */
+const LIBRARY_BATCH = 50
+
 export function Home() {
   const texts = useProjection(textLibrary)
   const [query, setQuery] = useState('')
+  const [visibleCount, setVisibleCount] = useState(LIBRARY_BATCH)
+  const sentinelRef = useRef<HTMLDivElement>(null)
   const searching = query.trim() !== ''
 
   // A search reaches past the home-page kind caps (interlinear.cc features
@@ -90,6 +95,29 @@ export function Home() {
           query,
         )
       : []
+
+  // Infinite loading: render the listing in windows, growing the window when
+  // the sentinel below it nears the viewport — sutta.stream carries hundreds
+  // of suttas, too many to render up front.
+  const visible = shown.slice(0, visibleCount)
+  const hasMore = visibleCount < shown.length
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+    // Recreated per batch: observe() fires with the current state, so a
+    // sentinel still within the margin keeps loading until it scrolls out.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setVisibleCount((count) => count + LIBRARY_BATCH)
+        }
+      },
+      { rootMargin: '600px' },
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [hasMore, visibleCount])
 
   return (
     <div className="container home">
@@ -123,18 +151,26 @@ export function Home() {
               placeholder={site.searchPlaceholder}
               aria-label="Search the library"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value)
+                setVisibleCount(LIBRARY_BATCH)
+              }}
             />
           </div>
           {shown.length === 0 && searching ? (
             <p className="home__empty">Nothing matches “{query.trim()}”.</p>
           ) : site.groupedLibrary ? (
-            <Library texts={shown} />
+            <Library texts={visible} />
           ) : (
             <div className="home__cards">
-              {shown.map((text) => (
+              {visible.map((text) => (
                 <TextCard key={text.id} text={text} />
               ))}
+            </div>
+          )}
+          {hasMore && (
+            <div className="home__more" ref={sentinelRef}>
+              <Spinner />
             </div>
           )}
         </>
