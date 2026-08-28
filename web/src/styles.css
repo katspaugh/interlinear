@@ -164,6 +164,45 @@ a {
   color: var(--highlight);
 }
 
+/* Impermanence: each letter of "stream" arises, dissolves, and re-forms.
+ * Negative staggered delays keep the word mid-flow from the first paint,
+ * rippling left to right. The dip stops well above zero so the wordmark
+ * never becomes unreadable. */
+.logo__stream span {
+  display: inline-block;
+  animation: impermanence 7s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.85s);
+}
+
+@keyframes impermanence {
+  0%,
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.35;
+    filter: blur(1.5px);
+    transform: translateY(0.06em);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo__stream span {
+    animation: none;
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .header__status {
   font-size: 13px;
   opacity: 0.8;
