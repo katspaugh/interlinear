@@ -8,7 +8,7 @@ export function Logo() {
     return (
       <>
         sutta<span className="logo__dot">.</span>
-        {/* anicca: letters arise and pass away; the word stays readable
+        {/* anicca: the letters flow like water; the word stays readable
          * for screen readers via the visually-hidden copy */}
         <span className="visually-hidden">stream</span>
         <span className="logo__stream" aria-hidden="true">
