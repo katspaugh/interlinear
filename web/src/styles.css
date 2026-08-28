@@ -598,16 +598,20 @@ a {
 
 .reader__controls {
   float: right;
+  max-width: 100%;
   font-size: 14px;
   color: var(--muted);
   display: flex;
-  gap: 15px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 15px;
   align-items: center;
   font-family: var(--font-ui);
 }
 
 .reader__toggle {
   cursor: pointer;
+  white-space: nowrap;
 }
 
 /* Gloss mode: fluent / literal (morpheme-by-morpheme) / off */
@@ -1050,6 +1054,13 @@ a {
   .reader__text {
     margin: 0 -15px;
     width: calc(100% + 30px);
+  }
+
+  /* On phones the controls can't share a line with the heading — make them
+     a normal block above it instead of a float that overflows the screen. */
+  .reader__controls {
+    float: none;
+    margin-bottom: 20px;
   }
 
   .reader__sidebar {
