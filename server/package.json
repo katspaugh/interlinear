@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "start": "tsx src/main.ts",
+    "import-suttas": "tsx src/import/cli.ts",
     "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {

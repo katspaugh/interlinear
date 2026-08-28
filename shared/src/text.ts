@@ -50,6 +50,15 @@ export function normalizeWord(word: string): string {
     .trim()
 }
 
+/**
+ * Whether a text's language is covered by the Digital Pāḷi Dictionary — the
+ * only language with an instant offline-dictionary tier ('dpd').
+ */
+export function langHasDpd(lang: string): boolean {
+  const normalized = lang.trim().toLowerCase()
+  return normalized === 'pali' || normalized === 'pāli' || normalized === 'pāḷi'
+}
+
 /** Slugify a sutta title for URLs, transliterating Pali diacritics to ASCII. */
 export function slugify(title: string): string {
   const ascii = title

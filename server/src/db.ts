@@ -26,8 +26,12 @@ export async function migrateAppTables(pool: pg.Pool): Promise<void> {
       kind text not null default 'prose',
       status text not null default 'glossing',
       builtin boolean not null default false,
+      translator text,
       created_at timestamptz not null default now()
     );
+
+    -- Upgrade databases created before imported texts carried a credit line.
+    alter table texts add column if not exists translator text;
 
     create table if not exists text_chunks (
       text_id uuid not null references texts(id) on delete cascade,
@@ -36,6 +40,16 @@ export async function migrateAppTables(pool: pg.Pool): Promise<void> {
       words jsonb,
       translation text,
       primary key (text_id, idx)
+    );
+
+    -- Queue for the admin-only text.import intent: one row per requested
+    -- SuttaCentral uid; the worker expands collections into more rows and
+    -- imports one sutta per tick.
+    create table if not exists imports (
+      uid text primary key,
+      status text not null default 'pending',
+      error text,
+      requested_at timestamptz not null default now()
     );
 
     create table if not exists definitions (

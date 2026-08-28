@@ -1,19 +1,26 @@
 import { z } from 'zod'
 import { event, intent, projection } from '@intenteffect/core'
+import { morphKindSchema, morphSchema } from './morphology.js'
 
 /* ------------------------------------------------------------------ */
 /* Schemas                                                             */
 /* ------------------------------------------------------------------ */
 
-/** One token with its interlinear gloss. `nl` marks a line break after it. */
+/** One token with its interlinear gloss. `nl` marks a line break after it;
+ * `m` is the optional morpheme segmentation (see morphology.ts) — absent on
+ * texts glossed before morphology existed and on unsegmentable tokens. */
 export const wordSchema = z.object({
   w: z.string(),
   g: z.string(),
   nl: z.boolean().optional(),
+  m: z.array(morphSchema).optional(),
 })
 export type Word = z.output<typeof wordSchema>
 
-export const textStatusSchema = z.enum(['glossing', 'ready', 'failed'])
+/** 'unglossed' marks imported texts (original + translation, no word glosses
+ * yet) that wait for a reader: the gloss worker ignores them until a
+ * `text.requestGloss` intent moves them to 'glossing'. */
+export const textStatusSchema = z.enum(['unglossed', 'glossing', 'ready', 'failed'])
 export type TextStatus = z.output<typeof textStatusSchema>
 
 export const textSummarySchema = z.object({
@@ -29,6 +36,9 @@ export const textSummarySchema = z.object({
   kind: z.string(),
   status: textStatusSchema,
   builtin: z.boolean(),
+  /** Credit line for an imported human translation (e.g. "Bhikkhu Sujato,
+   * SuttaCentral"); null for user texts and LLM-only translations. */
+  translator: z.string().nullable(),
   chunkCount: z.number().int(),
   glossedCount: z.number().int(),
   createdAt: z.string(),
@@ -51,18 +61,34 @@ export const textDetailSchema = z.object({
 })
 export type TextDetail = z.output<typeof textDetailSchema>
 
-/** Depth of a dictionary entry: 'fast' is the quick entry generated on tap,
- * 'deep' is the richer entry loaded on demand. Each is cached separately. */
-export const definitionTierSchema = z.enum(['fast', 'deep'])
+/** Source/depth of a dictionary entry: 'dpd' is an instant lookup in the
+ * Digital Pāḷi Dictionary (Pali only), 'fast' is the quick LLM entry
+ * generated on tap, 'deep' is the richer LLM entry loaded on demand. Each is
+ * cached separately, so a word shows its DPD entry the moment it arrives and
+ * upgrades in place when the LLM tiers land. */
+export const definitionTierSchema = z.enum(['dpd', 'fast', 'deep'])
 export type DefinitionTier = z.output<typeof definitionTierSchema>
 
-/** An LLM-generated dictionary entry for a word. */
+/** One morpheme of a dictionary entry's "built from" stack: the segment,
+ * its kind, a one-word gloss, and a short note telling the morpheme's story
+ * (spatial imagery, cognates in languages the learner knows). */
+export const definitionMorphemeSchema = z.object({
+  part: z.string(),
+  kind: morphKindSchema,
+  gloss: z.string(),
+  note: z.string(),
+})
+export type DefinitionMorpheme = z.output<typeof definitionMorphemeSchema>
+
+/** An LLM-generated dictionary entry for a word. `morphemes` is nullish so
+ * entries cached before morphology existed still validate. */
 export const definitionSchema = z.object({
   headword: z.string(),
   grammar: z.string(),
   meanings: z.array(z.string()),
   analysis: z.string().nullable(),
   etymology: z.string().nullable(),
+  morphemes: z.array(definitionMorphemeSchema).nullish(),
 })
 export type Definition = z.output<typeof definitionSchema>
 
@@ -99,6 +125,18 @@ export const textGlossFailed = event(
 )
 
 export const textRemoved = event('text.removed', z.object({ id: z.uuid() }))
+
+/** An unglossed (imported) text was queued for glossing by a reader. */
+export const textGlossQueued = event(
+  'text.glossQueued',
+  z.object({ textId: z.uuid() }),
+)
+
+/** SuttaCentral uids were queued for server-side import. */
+export const textImportQueued = event(
+  'text.importQueued',
+  z.object({ uids: z.array(z.string()) }),
+)
 
 export const wordDefinitionRequested = event(
   'word.definitionRequested',
@@ -146,6 +184,32 @@ export const removeText = intent('text.remove', z.object({ id: z.uuid() }), {
   emits: [textRemoved],
 })
 
+/** Ask for a text to be glossed. Sent by the reader when someone opens an
+ * 'unglossed' (imported) or 'failed' text — glossing is demand-driven, so
+ * the community's reading decides what gets glossed first, and a failure
+ * heals on the next read. Open to everyone (not admin-gated); a no-op for
+ * texts that are queued or done. */
+export const requestGloss = intent(
+  'text.requestGloss',
+  z.object({ id: z.uuid() }),
+  { emits: [textGlossQueued] },
+)
+
+/** Queue SuttaCentral uids — whole collections (mn, dhp) or single suttas
+ * (snp1.8) — for import by the background worker, which expands collections
+ * and imports one sutta per tick. Admin-only. Re-queuing a failed uid
+ * retries it; done uids are left alone. */
+export const importTexts = intent(
+  'text.import',
+  z.object({
+    uids: z
+      .array(z.string().regex(/^[a-z][a-z0-9.-]{0,30}$/))
+      .min(1)
+      .max(50),
+  }),
+  { emits: [textImportQueued] },
+)
+
 export const defineWord = intent(
   'word.define',
   z.object({
@@ -160,6 +224,14 @@ export const defineWord = intent(
 
 /* Internal intents — issued by the server's own gloss worker, rejected
  * for plain HTTP clients by the server's authorizeIntent hook. */
+
+/** Announce a text the worker just imported, so open tabs see it appear in
+ * the library live. The handler re-reads the summary and emits text.added. */
+export const announceText = intent(
+  'text.announce',
+  z.object({ id: z.uuid() }),
+  { emits: [textAdded] },
+)
 
 export const saveChunkGloss = intent(
   'text.saveChunkGloss',
@@ -191,6 +263,7 @@ export const saveDefinition = intent(
 )
 
 export const INTERNAL_INTENTS: ReadonlySet<string> = new Set([
+  announceText.type,
   saveChunkGloss.type,
   markGlossFailed.type,
   saveDefinition.type,
@@ -226,6 +299,11 @@ export const textLibrary = projection({
   .on(textGlossFailed, (texts, data) =>
     texts.map((t) => (t.id === data.textId ? { ...t, status: 'failed' as const } : t)),
   )
+  .on(textGlossQueued, (texts, data) =>
+    texts.map((t) =>
+      t.id === data.textId ? { ...t, status: 'glossing' as const } : t,
+    ),
+  )
   .on(textRemoved, (texts, data) => texts.filter((t) => t.id !== data.id))
 
 /** One text with all its chunks — powers the reader. Null when not found. */
@@ -248,6 +326,10 @@ export const textDetail = projection({
   .on(textGlossFailed, (detail, data) => {
     if (!detail || detail.text.id !== data.textId) return detail
     return { ...detail, text: { ...detail.text, status: 'failed' as const } }
+  })
+  .on(textGlossQueued, (detail, data) => {
+    if (!detail || detail.text.id !== data.textId) return detail
+    return { ...detail, text: { ...detail.text, status: 'glossing' as const } }
   })
   .on(textRemoved, (detail, data) =>
     detail && detail.text.id === data.id ? null : detail,

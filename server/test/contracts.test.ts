@@ -19,6 +19,7 @@ const summary: TextSummary = {
   kind: 'sutta',
   status: 'glossing',
   builtin: false,
+  translator: null,
   chunkCount: 2,
   glossedCount: 0,
   createdAt: '2026-01-01T00:00:00.000Z',

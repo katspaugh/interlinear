@@ -43,6 +43,8 @@ test('renderIndexHtml brands the shell for sutta.stream', () => {
   assert.match(html, /property="og:url" content="https:\/\/sutta\.stream\/"/)
   assert.match(html, /property="og:title"/)
   assert.match(html, /name="theme-color" content="#6e441f"/)
+  // Theme class stamped on <html> so the palette applies before JS runs.
+  assert.match(html, /<html lang="en" class="theme-sutta">/)
   // No og:image configured for sutta.stream yet.
   assert.doesNotMatch(html, /og:image/)
   // The head is still well-formed.
@@ -54,4 +56,15 @@ test('renderIndexHtml brands the shell for interlinear.cc', () => {
   assert.match(html, /<title>interlinear — read any text word by word<\/title>/)
   assert.match(html, /<link rel="icon" href="\/favicon\.ico"/)
   assert.match(html, /property="og:image" content="https:\/\/interlinear\.cc\/img\/books\.jpg"/)
+  // Default theme: no class added to <html>.
+  assert.match(html, /<html lang="en">/)
+})
+
+test('renderIndexHtml flags a passphrase-locked instance', () => {
+  assert.doesNotMatch(renderIndexHtml(SHELL, SUTTA_SITE), /admin-locked/)
+  assert.doesNotMatch(renderIndexHtml(SHELL, SUTTA_SITE, false), /admin-locked/)
+  assert.match(
+    renderIndexHtml(SHELL, SUTTA_SITE, true),
+    /<meta name="admin-locked" content="1" \/>/,
+  )
 })

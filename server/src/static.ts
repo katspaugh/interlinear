@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
 import { siteForHost, type SiteConfig } from '@interlinear/shared'
+import { adminTokenConfigured } from './auth.js'
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -26,12 +27,22 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * Brand the SPA shell for the site the request landed on: title, meta
- * description, favicon, and social-preview (Open Graph) tags — so a
- * sutta.stream link unfurls as sutta.stream, not as interlinear.
+ * Brand the SPA shell for the site the request landed on: the theme class on
+ * <html> (so the site's palette applies before the JS bundle runs — no flash
+ * of the default blue), title, meta description, favicon, and social-preview
+ * (Open Graph) tags — so a sutta.stream link unfurls as sutta.stream, not as
+ * interlinear. When the instance requires an owner passphrase, an
+ * admin-locked meta flag tells the client to hide owner-only UI (the add
+ * form, delete buttons) from visitors — cosmetic only; the server enforces
+ * the passphrase regardless.
  */
-export function renderIndexHtml(html: string, site: SiteConfig): string {
+export function renderIndexHtml(
+  html: string,
+  site: SiteConfig,
+  adminLocked = false,
+): string {
   const social = [
+    ...(adminLocked ? [`<meta name="admin-locked" content="1" />`] : []),
     `<meta property="og:site_name" content="${escapeHtml(site.name)}" />`,
     `<meta property="og:type" content="website" />`,
     `<meta property="og:url" content="https://${site.domain}/" />`,
@@ -44,6 +55,11 @@ export function renderIndexHtml(html: string, site: SiteConfig): string {
     `<meta name="theme-color" content="${escapeHtml(site.themeColor)}" />`,
   ].join('\n    ')
   return html
+    .replace(/<html([^>]*)>/, (_m, attrs: string) =>
+      site.themeClass
+        ? `<html${attrs} class="${escapeHtml(site.themeClass)}">`
+        : `<html${attrs}>`,
+    )
     .replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(site.title)}</title>`)
     .replace(
       /(<meta[^>]*name="description"[\s\S]*?content=")[^"]*(")/,
@@ -87,7 +103,11 @@ export function createStaticHandler(root: string) {
       const site = siteForHost(req.headers.host)
       let html = indexCache.get(site.id)
       if (html === undefined) {
-        html = renderIndexHtml(fs.readFileSync(filePath, 'utf8'), site)
+        html = renderIndexHtml(
+          fs.readFileSync(filePath, 'utf8'),
+          site,
+          adminTokenConfigured(),
+        )
         indexCache.set(site.id, html)
       }
       res.writeHead(200, {

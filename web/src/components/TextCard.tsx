@@ -17,10 +17,14 @@ export function TextCard(props: { text: TextSummary }) {
 
       <div className="card__body">
         {text.preview ? (
-          <Words words={text.preview} showGlosses={true} />
+          <Words words={text.preview} />
         ) : (
           <p className="card__pending">
-            {text.status === 'failed' ? '⚠ glossing failed' : 'Glossing…'}
+            {text.status === 'failed'
+              ? '⚠ glossing failed'
+              : text.status === 'unglossed'
+                ? 'Not yet glossed — open to read'
+                : 'Glossing…'}
           </p>
         )}
       </div>

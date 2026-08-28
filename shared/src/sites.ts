@@ -26,12 +26,19 @@ export interface SiteConfig {
   favicon: string
   /** Absolute og:image URL, when the site has one. */
   ogImage?: string
+  /** Placeholder for the library search box, naming what's searchable here. */
+  searchPlaceholder: string
   /** Show only texts of this kind on the home page (undefined = all). */
   onlyKind?: string
   /** Cap how many texts of a kind the home page shows (kinds not listed are
    * uncapped). Lets interlinear.cc feature just a taste of the suttas while
    * sutta.stream carries the full collection. */
   kindCaps?: Record<string, number>
+  /** Kinds pushed to the end of the home listing (order otherwise stable). */
+  demoteKinds?: string[]
+  /** Render the library as an index grouped by collection instead of the
+   * flat card grid — for sites carrying hundreds of texts. */
+  groupedLibrary?: boolean
 }
 
 export const INTERLINEAR_SITE: SiteConfig = {
@@ -47,7 +54,9 @@ export const INTERLINEAR_SITE: SiteConfig = {
   themeColor: '#008acc',
   favicon: '/favicon.ico',
   ogImage: 'https://interlinear.cc/img/books.jpg',
-  kindCaps: { sutta: 2 },
+  searchPlaceholder: 'Search by title, author, or language…',
+  kindCaps: { sutta: 1 },
+  demoteKinds: ['sutta'],
 }
 
 export const SUTTA_SITE: SiteConfig = {
@@ -62,7 +71,9 @@ export const SUTTA_SITE: SiteConfig = {
   themeClass: 'theme-sutta',
   themeColor: '#6e441f',
   favicon: '/favicon-sutta.svg',
+  searchPlaceholder: 'Search by collection, number, or title…',
   onlyKind: 'sutta',
+  groupedLibrary: true,
 }
 
 export const SITES: SiteConfig[] = [INTERLINEAR_SITE, SUTTA_SITE]
@@ -83,22 +94,32 @@ export function siteForHost(host: string | undefined): SiteConfig {
 /**
  * The site's lens on the shared library: `onlyKind` filters the library down
  * to one kind, `kindCaps` limits how many of a kind appear (keeping library
- * order, i.e. the earliest texts of that kind win).
+ * order, i.e. the earliest texts of that kind win), and `demoteKinds` sinks
+ * whole kinds to the end of the listing.
  */
 export function filterLibrary<T extends { kind: string }>(
   site: SiteConfig,
   texts: T[],
 ): T[] {
-  const shown = site.onlyKind
+  let shown = site.onlyKind
     ? texts.filter((text) => text.kind === site.onlyKind)
     : texts
   const caps = site.kindCaps
-  if (!caps) return shown
-  const seen: Record<string, number> = {}
-  return shown.filter((text) => {
-    const cap = caps[text.kind]
-    if (cap === undefined) return true
-    seen[text.kind] = (seen[text.kind] ?? 0) + 1
-    return seen[text.kind]! <= cap
-  })
+  if (caps) {
+    const seen: Record<string, number> = {}
+    shown = shown.filter((text) => {
+      const cap = caps[text.kind]
+      if (cap === undefined) return true
+      seen[text.kind] = (seen[text.kind] ?? 0) + 1
+      return seen[text.kind]! <= cap
+    })
+  }
+  const demoted = site.demoteKinds
+  if (demoted?.length) {
+    shown = [
+      ...shown.filter((text) => !demoted.includes(text.kind)),
+      ...shown.filter((text) => demoted.includes(text.kind)),
+    ]
+  }
+  return shown
 }

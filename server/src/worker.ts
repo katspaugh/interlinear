@@ -1,11 +1,16 @@
 import type pg from 'pg'
 import {
+  announceText,
+  langHasDpd,
   markGlossFailed,
   saveChunkGloss,
   saveDefinition,
+  type Definition,
   type DefinitionTier,
 } from '@interlinear/shared'
 import { sendInternal, type App } from './app.js'
+import { lookupDpd } from './dpd.js'
+import { expandUid, importSutta } from './import/importer.js'
 import {
   definitionsAvailable,
   defineWordLlm,
@@ -14,7 +19,11 @@ import {
 } from './llm.js'
 
 const POLL_MS = 2_000
-const MAX_CHUNK_FAILURES = 2
+/** Failures before a text is marked 'failed' — parallel chunks can fail in
+ * bursts, and a reader re-opening the text re-queues it anyway. */
+const MAX_CHUNK_FAILURES = 4
+/** Chunks glossed in parallel per tick. */
+const GLOSS_CONCURRENCY = Number(process.env.GLOSS_CONCURRENCY ?? 3)
 
 const NO_KEY_ERROR =
   'Glossing is not available: the server has no ANTHROPIC_API_KEY configured.'
@@ -30,6 +39,7 @@ interface PendingChunk {
   text_id: string
   idx: number
   original: string
+  translation: string | null
   title: string
   source: string | null
   lang: string
@@ -82,12 +92,15 @@ export class GlossWorker {
     let hadWork = false
     try {
       // Definitions are user-awaited (a reader is looking at a spinner), so
-      // they must never queue behind a slow gloss call — run both in parallel.
-      const [chunkWork, defWork] = await Promise.all([
-        this.processChunk(),
+      // they must never queue behind a slow gloss call — run all three
+      // streams in parallel. Imports are chunked to one sutta per tick, so
+      // a queued collection never starves the others.
+      const [chunkWork, defWork, importWork] = await Promise.all([
+        this.processChunks(),
         this.processDefinitions(),
+        this.processImports(),
       ])
-      hadWork = chunkWork || defWork
+      hadWork = chunkWork || defWork || importWork
     } catch (cause) {
       console.error('[worker]', cause)
     } finally {
@@ -96,32 +109,38 @@ export class GlossWorker {
     }
   }
 
-  private async processChunk(): Promise<boolean> {
+  private async processChunks(): Promise<boolean> {
     const pending = await this.pool.query<PendingChunk>(
-      `select c.text_id, c.idx, c.original, t.title, t.source, t.lang, t.kind
+      `select c.text_id, c.idx, c.original, c.translation, t.title, t.source, t.lang, t.kind
        from text_chunks c
        join texts t on t.id = c.text_id
        where t.status = 'glossing' and c.words is null
        order by t.created_at asc, c.idx asc
-       limit 1`,
+       limit ${GLOSS_CONCURRENCY}`,
     )
-    const chunk = pending.rows[0]
-    if (!chunk) return false
+    if (pending.rows.length === 0) return false
 
     if (!glossAvailable()) {
       await sendInternal(this.app, markGlossFailed, {
-        textId: chunk.text_id,
+        textId: pending.rows[0]!.text_id,
         error: NO_KEY_ERROR,
       })
       return true
     }
 
+    await Promise.all(pending.rows.map((chunk) => this.processChunk(chunk)))
+    return true
+  }
+
+  private async processChunk(chunk: PendingChunk): Promise<void> {
     try {
+      console.log(`[worker] glossing "${chunk.title}" chunk ${chunk.idx}`)
       const gloss = await glossChunk(chunk.original, {
         title: chunk.title,
         source: chunk.source,
         lang: chunk.lang,
         kind: chunk.kind,
+        translation: chunk.translation,
       })
       await sendInternal(this.app, saveChunkGloss, {
         textId: chunk.text_id,
@@ -142,6 +161,56 @@ export class GlossWorker {
         })
       }
     }
+  }
+
+  /** Work the text.import queue: expand a collection uid into per-sutta
+   * rows, or import one sutta from SuttaCentral, per tick. */
+  private async processImports(): Promise<boolean> {
+    const pending = await this.pool.query<{ uid: string }>(
+      `select uid from imports where status = 'pending'
+       order by requested_at asc, uid asc limit 1`,
+    )
+    const row = pending.rows[0]
+    if (!row) return false
+    const uid = row.uid
+
+    try {
+      const leaves = await expandUid(uid)
+      if (leaves.length === 0) throw new Error('no suttas found for this uid')
+      if (leaves.length === 1 && leaves[0]!.uid === uid) {
+        const result = await importSutta(this.pool, leaves[0]!, {
+          dryRun: false,
+          force: false,
+        })
+        if (result.outcome === 'failed') {
+          throw new Error(result.error ?? 'import failed')
+        }
+        if (result.id) {
+          await sendInternal(this.app, announceText, { id: result.id })
+        }
+      } else {
+        // A collection: queue its suttas and let later ticks import them.
+        for (const leaf of leaves) {
+          await this.pool.query(
+            `insert into imports (uid, status) values ($1, 'pending')
+             on conflict (uid) do nothing`,
+            [leaf.uid],
+          )
+        }
+        console.log(`[worker] import: expanded ${uid} into ${leaves.length} suttas`)
+      }
+      await this.pool.query(
+        `update imports set status = 'done', error = null where uid = $1`,
+        [uid],
+      )
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : String(cause)
+      console.error(`[worker] import failed for ${uid}:`, message)
+      await this.pool.query(
+        `update imports set status = 'failed', error = $2 where uid = $1`,
+        [uid, message],
+      )
+    }
     return true
   }
 
@@ -158,6 +227,30 @@ export class GlossWorker {
 
   private async processDefinition(row: PendingDefinition): Promise<void> {
     const { lang, word, tier, kind } = row
+    // The 'dpd' tier is a dictionary lookup, not an LLM call — no API key
+    // needed, and a missing entry is a normal outcome (the LLM tiers cover it).
+    if (tier === 'dpd') {
+      try {
+        const definition = await lookupDpd(word)
+        await sendInternal(this.app, saveDefinition, {
+          lang,
+          word,
+          tier,
+          definition,
+          error: definition ? null : 'not in the Digital Pāḷi Dictionary',
+        })
+      } catch (cause) {
+        console.error(`[worker] DPD lookup failed for "${word}":`, cause)
+        await sendInternal(this.app, saveDefinition, {
+          lang,
+          word,
+          tier,
+          definition: null,
+          error: cause instanceof Error ? cause.message : String(cause),
+        })
+      }
+      return
+    }
     if (!definitionsAvailable()) {
       await sendInternal(this.app, saveDefinition, {
         lang,
@@ -168,8 +261,28 @@ export class GlossWorker {
       })
       return
     }
+    // For Pali the panel shows the DPD entry's meanings as the base and only
+    // the LLM's complementary sections (morphemes, etymology, analysis). Wait
+    // for the DPD lookup — usually in flight in this same batch, so at most
+    // one ~1s tick — and hand its entry to the model as context, so it builds
+    // on the dictionary instead of re-deriving the meanings.
+    let dpdContext: Definition | null = null
+    if (tier === 'fast' && langHasDpd(lang)) {
+      const dpdRow = await this.pool.query<{
+        status: string
+        definition: Definition | null
+      }>(
+        `select status, definition from definitions
+         where lang = $1 and word = $2 and tier = 'dpd'`,
+        [lang, word],
+      )
+      const row = dpdRow.rows[0]
+      // Still looking up: leave this row pending; the next tick retries it.
+      if (row?.status === 'pending') return
+      dpdContext = row?.status === 'ready' ? row.definition : null
+    }
     try {
-      const definition = await defineWordLlm(lang, word, kind, tier)
+      const definition = await defineWordLlm(lang, word, kind, tier, dpdContext)
       await sendInternal(this.app, saveDefinition, {
         lang,
         word,
