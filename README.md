@@ -162,7 +162,8 @@ pnpm start               # production mode: server serves web/dist on :3001
 | `GLOSS_QUEUE_CAP`   | `10`                                             | Texts queued for glossing at once |
 | `DEFINITION_MODEL_FAST` | `claude-haiku-4-5`                           | Quick dictionary entries         |
 | `DEFINITION_MODEL_DEEP` | `claude-sonnet-5`                            | Detailed dictionary entries      |
-| `DPD_BASE_URL`      | `https://www.dpdict.net`                         | Digital Pāḷi Dictionary API      |
+| `DPD_DB_PATH`       | — (set in the Dockerfile)                        | Local DPD SQLite database        |
+| `DPD_BASE_URL`      | `https://www.dpdict.net`                         | DPD API fallback                 |
 
 To make bulk glossing cheap, set `DEEPSEEK_API_KEY`: glossing then runs on
 DeepSeek's Anthropic-compatible endpoint with `deepseek-v4-pro`. Any other
@@ -170,6 +171,16 @@ Anthropic-compatible provider works via `GLOSS_BASE_URL` + `GLOSS_MODEL` +
 `GLOSS_API_KEY`. With a custom base URL the server stops using
 Anthropic-specific structured outputs and instead asks for plain JSON,
 validated locally. Definitions always use the Anthropic API.
+
+DPD lookups are self-hosted in production: the Dockerfile bakes the
+[released](https://github.com/digitalpalidictionary/dpd-db/releases)
+`dpd-mobile.db` (~1 GB SQLite) into the image and the server queries it
+in-process (`server/src/dpd.ts`, `node:sqlite`) — sub-millisecond lookups,
+no runtime dependency on dpdict.net, and richer entries (root meanings and
+Sanskrit cognates feed an etymology line). Without `DPD_DB_PATH` — local
+dev, or a build that skips the download — the server transparently falls
+back to the dpdict.net API. Rebuilding the image picks up DPD's latest
+monthly release.
 
 Reading is public. When `ADMIN_TOKEN` is set, adding and removing texts
 requires that passphrase (remembered per browser); word lookups stay public

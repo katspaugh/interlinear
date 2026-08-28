@@ -5,6 +5,7 @@ import {
   parseDpdResponse,
   parseGrammarReadings,
   parseSummaryEntries,
+  rowsToDefinition,
 } from '../src/dpd.js'
 import { dpdContextBlock } from '../src/llm.js'
 
@@ -129,6 +130,85 @@ test('parseDpdResponse includes the deconstruction for sandhi words', () => {
   assert.equal(definition.grammar, 'sandhi')
   assert.deepEqual(definition.meanings, ['just like; as if; imagine if'])
   assert.equal(definition.analysis, 'se + yathā + api')
+})
+
+/* Local-backend row mapping (fixtures mirror real dpd-mobile.db rows). */
+
+const emptyHeadword = {
+  meaning_2: '',
+  meaning_lit: '',
+  construction: '',
+  sanskrit: '',
+  root_key: '',
+}
+
+test('rowsToDefinition assembles an inflected form with etymology', () => {
+  const definition = rowsToDefinition(
+    'bhikkhave',
+    {
+      headwords: '[1, 2]',
+      grammar: '[["bhikkhu", "noun", "masc voc pl"]]',
+      deconstructor: '',
+    },
+    [
+      { ...emptyHeadword, lemma_1: 'bhikkhave', pos: 'masc', meaning_1: 'monks' },
+      {
+        lemma_1: 'bhikkhu',
+        pos: 'masc',
+        meaning_1: 'monk; monastic',
+        meaning_2: 'Buddhist monk',
+        meaning_lit: 'beggar',
+        construction: '√bhikkh + u',
+        sanskrit: 'bhikṣu [bhikṣ]',
+        root_key: '√bhikkh',
+      },
+    ],
+    [{ root: '√bhikkh', root_meaning: 'beg' }],
+  )
+  assert.ok(definition)
+  assert.equal(definition.headword, 'bhikkhu')
+  assert.equal(definition.grammar, 'masc voc pl of bhikkhu (noun)')
+  assert.deepEqual(definition.meanings, [
+    'bhikkhave (masc): monks',
+    'bhikkhu (masc): monk; monastic; lit. beggar',
+  ])
+  assert.equal(
+    definition.etymology,
+    "√bhikkh + u; from √bhikkh 'beg'; Sanskrit bhikṣu [bhikṣ]",
+  )
+})
+
+test('rowsToDefinition handles sandhi, meaning_2 fallback, and homonym numbers', () => {
+  const definition = rowsToDefinition(
+    'seyyathāpi',
+    { headwords: '[1]', grammar: '', deconstructor: '["se + yathā + api"]' },
+    [
+      {
+        ...emptyHeadword,
+        lemma_1: 'seyyathāpi 1.01',
+        pos: 'sandhi',
+        meaning_1: '',
+        meaning_2: 'just like',
+        construction: 'se + yathā + api',
+        sanskrit: 'tam + yathā + api',
+      },
+    ],
+    [],
+  )
+  assert.ok(definition)
+  assert.equal(definition.headword, 'seyyathāpi')
+  assert.equal(definition.grammar, 'sandhi')
+  assert.deepEqual(definition.meanings, ['just like'])
+  assert.equal(definition.analysis, 'se + yathā + api')
+  // The construction duplicates the deconstruction — only Sanskrit remains.
+  assert.equal(definition.etymology, 'Sanskrit tam + yathā + api')
+})
+
+test('rowsToDefinition returns null for an empty lookup row', () => {
+  assert.equal(
+    rowsToDefinition('x', { headwords: '', grammar: '', deconstructor: '' }, [], []),
+    null,
+  )
 })
 
 test('dpdContextBlock carries the DPD basics into the LLM prompt', () => {
