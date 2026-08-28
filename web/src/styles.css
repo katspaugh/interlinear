@@ -984,3 +984,18 @@ a {
   color: var(--muted);
   margin-top: 4px;
 }
+
+/* Link to the sutta's SuttaCentral page (parallels, other translations) */
+.reader__sclink {
+  display: block;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.reader__sclink a {
+  color: var(--muted);
+}
+
+.reader__sclink a:hover {
+  color: var(--accent-strong);
+}

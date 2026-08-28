@@ -134,28 +134,3 @@ export function rootTitle(sutta: BilaraSutta): string | null {
   return title || null
 }
 
-/** Long collection names by uid prefix, matching the seed texts' `source`
- * style ("Majjhima Nikāya 10") so library grouping unifies both. */
-const COLLECTIONS: Record<string, string> = {
-  dn: 'Dīgha Nikāya',
-  mn: 'Majjhima Nikāya',
-  sn: 'Saṃyutta Nikāya',
-  an: 'Aṅguttara Nikāya',
-  kp: 'Khuddakapāṭha',
-  dhp: 'Dhammapada',
-  ud: 'Udāna',
-  iti: 'Itivuttaka',
-  snp: 'Sutta Nipāta',
-  thag: 'Theragāthā',
-  thig: 'Therīgāthā',
-}
-
-/** "snp1.8" → "Sutta Nipāta 1.8"; "dhp1-20" → "Dhammapada 1–20"; null for
- * unknown collections (the caller falls back to the suttaplex acronym). */
-export function sourceForUid(uid: string): string | null {
-  const match = uid.match(/^([a-z]+)([\d.-]+)$/)
-  if (!match) return null
-  const name = COLLECTIONS[match[1]!]
-  if (!name) return null
-  return `${name} ${match[2]!.replace(/-/g, '–')}`
-}

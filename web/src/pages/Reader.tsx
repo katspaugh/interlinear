@@ -6,6 +6,7 @@ import {
   normalizeWord,
   removeText,
   requestGloss,
+  suttaCentralUrl,
   textDetail,
   type Word,
 } from '@interlinear/shared'
@@ -64,6 +65,7 @@ export function Reader() {
   }
 
   const { text, chunks } = detail.data
+  const scUrl = suttaCentralUrl(text)
 
   // Fired on pointerdown: kick off the server-side lookup before the click
   // even lands, so the entry is a few ms closer when the sidebar opens.
@@ -146,6 +148,13 @@ export function Reader() {
           {text.translator && (
             <small className="reader__credit">
               Translation: {text.translator}
+            </small>
+          )}
+          {scUrl && (
+            <small className="reader__sclink">
+              <a href={scUrl} target="_blank" rel="noreferrer">
+                Parallels &amp; more translations on SuttaCentral&nbsp;↗
+              </a>
             </small>
           )}
         </div>

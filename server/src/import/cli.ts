@@ -16,13 +16,9 @@
 
 import crypto from 'node:crypto'
 import pg from 'pg'
+import { sourceForUid } from '@interlinear/shared'
 import { normalizeDatabaseUrl } from '../db.js'
-import {
-  chunksFromBilara,
-  rootTitle,
-  sourceForUid,
-  type BilaraSutta,
-} from './bilara.js'
+import { chunksFromBilara, rootTitle, type BilaraSutta } from './bilara.js'
 
 const API = 'https://suttacentral.net/api'
 const TRANSLATOR = 'Bhikkhu Sujato, SuttaCentral'

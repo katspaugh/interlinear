@@ -21,8 +21,12 @@ function Footer() {
   if (site.id === 'sutta') {
     return (
       <p>
-        Reading the Buddha's discourses word by&nbsp;word. Interlinear glossing
-        and dictionary by{' '}
+        Reading the Buddha's discourses word by&nbsp;word. Pali texts
+        (Mahāsaṅgīti Tipiṭaka) and translations by Bhikkhu Sujato, from{' '}
+        <a href="https://suttacentral.net" target="_blank" rel="noreferrer">
+          SuttaCentral
+        </a>
+        . Interlinear glossing and dictionary by{' '}
         <a href="https://www.anthropic.com/claude" target="_blank" rel="nofollow noreferrer">
           Claude
         </a>

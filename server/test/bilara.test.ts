@@ -6,7 +6,6 @@ import {
   cleanSegment,
   rootTitle,
   segmentKey,
-  sourceForUid,
   type BilaraSutta,
 } from '../src/import/bilara.js'
 
@@ -106,12 +105,4 @@ test('cleanSegment strips tags and tidies whitespace', () => {
 
 test('rootTitle reads the 0.2 header', () => {
   assert.equal(rootTitle(prose), 'Mūlapariyāyasutta')
-})
-
-test('sourceForUid renders seed-style source lines', () => {
-  assert.equal(sourceForUid('mn10'), 'Majjhima Nikāya 10')
-  assert.equal(sourceForUid('snp1.8'), 'Sutta Nipāta 1.8')
-  assert.equal(sourceForUid('dhp1-20'), 'Dhammapada 1–20')
-  assert.equal(sourceForUid('sn56.11'), 'Saṃyutta Nikāya 56.11')
-  assert.equal(sourceForUid('pli-tv-bu-vb-pj1'), null)
 })
