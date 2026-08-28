@@ -129,6 +129,12 @@ export const textGlossQueued = event(
   z.object({ textId: z.uuid() }),
 )
 
+/** SuttaCentral uids were queued for server-side import. */
+export const textImportQueued = event(
+  'text.importQueued',
+  z.object({ uids: z.array(z.string()) }),
+)
+
 export const wordDefinitionRequested = event(
   'word.definitionRequested',
   z.object({ lang: z.string(), word: z.string(), tier: definitionTierSchema }),
@@ -185,6 +191,21 @@ export const requestGloss = intent(
   { emits: [textGlossQueued] },
 )
 
+/** Queue SuttaCentral uids — whole collections (mn, dhp) or single suttas
+ * (snp1.8) — for import by the background worker, which expands collections
+ * and imports one sutta per tick. Admin-only. Re-queuing a failed uid
+ * retries it; done uids are left alone. */
+export const importTexts = intent(
+  'text.import',
+  z.object({
+    uids: z
+      .array(z.string().regex(/^[a-z][a-z0-9.-]{0,30}$/))
+      .min(1)
+      .max(50),
+  }),
+  { emits: [textImportQueued] },
+)
+
 export const defineWord = intent(
   'word.define',
   z.object({
@@ -199,6 +220,14 @@ export const defineWord = intent(
 
 /* Internal intents — issued by the server's own gloss worker, rejected
  * for plain HTTP clients by the server's authorizeIntent hook. */
+
+/** Announce a text the worker just imported, so open tabs see it appear in
+ * the library live. The handler re-reads the summary and emits text.added. */
+export const announceText = intent(
+  'text.announce',
+  z.object({ id: z.uuid() }),
+  { emits: [textAdded] },
+)
 
 export const saveChunkGloss = intent(
   'text.saveChunkGloss',
@@ -230,6 +259,7 @@ export const saveDefinition = intent(
 )
 
 export const INTERNAL_INTENTS: ReadonlySet<string> = new Set([
+  announceText.type,
   saveChunkGloss.type,
   markGlossFailed.type,
   saveDefinition.type,

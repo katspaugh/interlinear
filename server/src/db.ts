@@ -42,6 +42,16 @@ export async function migrateAppTables(pool: pg.Pool): Promise<void> {
       primary key (text_id, idx)
     );
 
+    -- Queue for the admin-only text.import intent: one row per requested
+    -- SuttaCentral uid; the worker expands collections into more rows and
+    -- imports one sutta per tick.
+    create table if not exists imports (
+      uid text primary key,
+      status text not null default 'pending',
+      error text,
+      requested_at timestamptz not null default now()
+    );
+
     create table if not exists definitions (
       lang text not null,
       word text not null,

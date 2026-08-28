@@ -1,11 +1,13 @@
 import type pg from 'pg'
 import {
+  announceText,
   markGlossFailed,
   saveChunkGloss,
   saveDefinition,
   type DefinitionTier,
 } from '@interlinear/shared'
 import { sendInternal, type App } from './app.js'
+import { expandUid, importSutta } from './import/importer.js'
 import {
   definitionsAvailable,
   defineWordLlm,
@@ -83,12 +85,15 @@ export class GlossWorker {
     let hadWork = false
     try {
       // Definitions are user-awaited (a reader is looking at a spinner), so
-      // they must never queue behind a slow gloss call — run both in parallel.
-      const [chunkWork, defWork] = await Promise.all([
+      // they must never queue behind a slow gloss call — run all three
+      // streams in parallel. Imports are chunked to one sutta per tick, so
+      // a queued collection never starves the others.
+      const [chunkWork, defWork, importWork] = await Promise.all([
         this.processChunk(),
         this.processDefinitions(),
+        this.processImports(),
       ])
-      hadWork = chunkWork || defWork
+      hadWork = chunkWork || defWork || importWork
     } catch (cause) {
       console.error('[worker]', cause)
     } finally {
@@ -143,6 +148,57 @@ export class GlossWorker {
           error: cause instanceof Error ? cause.message : String(cause),
         })
       }
+    }
+    return true
+  }
+
+  /** Work the text.import queue: expand a collection uid into per-sutta
+   * rows, or import one sutta from SuttaCentral, per tick. */
+  private async processImports(): Promise<boolean> {
+    const pending = await this.pool.query<{ uid: string }>(
+      `select uid from imports where status = 'pending'
+       order by requested_at asc, uid asc limit 1`,
+    )
+    const row = pending.rows[0]
+    if (!row) return false
+    const uid = row.uid
+
+    try {
+      const leaves = await expandUid(uid)
+      if (leaves.length === 0) throw new Error('no suttas found for this uid')
+      if (leaves.length === 1 && leaves[0]!.uid === uid) {
+        const result = await importSutta(this.pool, leaves[0]!, {
+          dryRun: false,
+          force: false,
+        })
+        if (result.outcome === 'failed') {
+          throw new Error(result.error ?? 'import failed')
+        }
+        if (result.id) {
+          await sendInternal(this.app, announceText, { id: result.id })
+        }
+      } else {
+        // A collection: queue its suttas and let later ticks import them.
+        for (const leaf of leaves) {
+          await this.pool.query(
+            `insert into imports (uid, status) values ($1, 'pending')
+             on conflict (uid) do nothing`,
+            [leaf.uid],
+          )
+        }
+        console.log(`[worker] import: expanded ${uid} into ${leaves.length} suttas`)
+      }
+      await this.pool.query(
+        `update imports set status = 'done', error = null where uid = $1`,
+        [uid],
+      )
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : String(cause)
+      console.error(`[worker] import failed for ${uid}:`, message)
+      await this.pool.query(
+        `update imports set status = 'failed', error = $2 where uid = $1`,
+        [uid, message],
+      )
     }
     return true
   }

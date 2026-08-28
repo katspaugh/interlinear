@@ -6,7 +6,9 @@ import { createPostgresStore, type PostgresStore } from '@intenteffect/postgres'
 import {
   INTERNAL_INTENTS,
   addText,
+  announceText,
   defineWord,
+  importTexts,
   markGlossFailed,
   normalizeWord,
   removeText,
@@ -20,6 +22,7 @@ import {
   textDetail,
   textGlossFailed,
   textGlossQueued,
+  textImportQueued,
   textLibrary,
   textRemoved,
   wordDefined,
@@ -42,7 +45,11 @@ export interface Ctx {
 }
 
 /** Intents that mutate the library — owner-only once ADMIN_TOKEN is set. */
-const ADMIN_INTENTS: ReadonlySet<string> = new Set([addText.type, removeText.type])
+const ADMIN_INTENTS: ReadonlySet<string> = new Set([
+  addText.type,
+  removeText.type,
+  importTexts.type,
+])
 
 /** New dictionary entries generated per rolling 24h before non-owners are
  * asked to come back later — a lid on the LLM bill, not a rate limiter. */
@@ -209,6 +216,30 @@ export async function createApp(connectionString: string): Promise<InterlinearAp
     emit(textRemoved, { id: input.id })
   })
 
+  app.handle(importTexts, async ({ input, tx, emit }) => {
+    const queued: string[] = []
+    for (const uid of input.uids) {
+      // New uids queue; failed ones re-queue for a retry; pending and done
+      // rows are left alone (no rowCount, so they don't count as queued).
+      const inserted = await tx.query(
+        `insert into imports (uid, status) values ($1, 'pending')
+         on conflict (uid) do update set status = 'pending', error = null
+         where imports.status = 'failed'`,
+        [uid],
+      )
+      if (inserted.rowCount) queued.push(uid)
+    }
+    if (queued.length === 0) {
+      return err(
+        intentEffectError(
+          'validation_failed',
+          'all of these uids are already imported or queued',
+        ),
+      )
+    }
+    emit(textImportQueued, { uids: queued })
+  })
+
   app.handle(requestGloss, async ({ input, tx, emit }) => {
     const found = await tx.query<{ status: string }>(
       `select status from texts where id = $1`,
@@ -273,6 +304,17 @@ export async function createApp(connectionString: string): Promise<InterlinearAp
   })
 
   /* Internal intents — reachable only with ctx.internal (the gloss worker). */
+
+  app.handle(announceText, async ({ input, tx, emit }) => {
+    const rows = await tx.query<TextRow>(
+      `${SUMMARY_SQL} where t.id = $1 group by t.id`,
+      [input.id],
+    )
+    if (!rows.rows[0]) {
+      return err(intentEffectError('not_found', 'text not found'))
+    }
+    emit(textAdded, toSummary(rows.rows[0]))
+  })
 
   app.handle(saveChunkGloss, async ({ input, tx, emit }) => {
     // Imported chunks already carry a human translation (e.g. Bhikkhu

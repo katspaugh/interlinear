@@ -101,6 +101,20 @@ future reader. The existing human translation is kept — the glosser
 receives it as reference context, which noticeably improves gloss accuracy —
 and `GLOSS_QUEUE_CAP` bounds how many texts can queue at once.
 
+On a running deployment (where the database isn't reachable from your
+machine), use the admin-only `text.import` intent instead — the background
+worker expands collections and imports one sutta per tick, and open tabs
+see the library fill in live:
+
+```sh
+curl -X POST https://sutta.stream/_intenteffect/send \
+  -H 'content-type: application/json' -H "x-admin-token: $ADMIN_TOKEN" \
+  -d "{\"intentId\":\"$(uuidgen)\",\"type\":\"text.import\",\"input\":{\"uids\":[\"kp\",\"dhp\",\"snp\"]}}"
+```
+
+Progress lands in the `imports` table (and the server log); re-sending a
+failed uid retries it.
+
 On sutta.stream the library renders as a searchable index grouped by
 collection (search ignores case and diacritics, so "metta" finds
 Mettāsutta); interlinear.cc keeps its card grid and still caps the suttas
