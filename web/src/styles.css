@@ -211,6 +211,8 @@ a {
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    /* the hero's text-shadow would show through the transparent fill */
+    text-shadow: none;
     animation:
       impermanence 16s linear infinite,
       pulse-a 3.3s ease-in-out infinite,
