@@ -1,0 +1,38 @@
+# Deploy to DigitalOcean App Platform.
+#
+# Triggers a new deployment of the existing app (the app pulls this repo's
+# main branch itself, per .do/app.yaml). Runs on every push to main, and can
+# be run manually from the Actions tab.
+#
+# Requires one repository secret:
+#   DIGITALOCEAN_ACCESS_TOKEN — a DO API token with app deploy access
+#   (create at https://cloud.digitalocean.com/account/api/tokens).
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Trigger App Platform deployment
+        run: |
+          APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | awk '$2 == "interlinear" { print $1 }')
+          if [ -z "$APP_ID" ]; then
+            echo "No App Platform app named 'interlinear' found" >&2
+            exit 1
+          fi
+          echo "Deploying app $APP_ID"
+          doctl apps create-deployment "$APP_ID" --wait
