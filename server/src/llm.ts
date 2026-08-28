@@ -190,10 +190,15 @@ async function requestGloss(system: string, prompt: string): Promise<GlossResult
     return response.parsed_output
   }
   // Compat endpoints don't implement Anthropic structured outputs — ask for
-  // plain JSON and validate locally.
+  // plain JSON and validate locally. Thinking is explicitly disabled:
+  // DeepSeek reasons by default here, which made each gloss take minutes
+  // and often exhausted max_tokens before the JSON (glossing with the
+  // reference translation at hand doesn't need reasoning — measured 4s
+  // without thinking vs 25s+ with, on the same chunk).
   const response = await getGlossClient().messages.create({
     model: GLOSS_MODEL,
     max_tokens: 16000,
+    thinking: { type: 'disabled' },
     system: system + COMPAT_JSON_INSTRUCTION,
     messages: [{ role: 'user', content: prompt }],
   })
