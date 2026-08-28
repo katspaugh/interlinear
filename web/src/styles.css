@@ -80,8 +80,12 @@ body {
   background-size: cover;
 }
 
+/* Dawn light over ochre: a warm glow from above, dusk pooling below. */
 .theme-sutta .page_home {
-  background-image: linear-gradient(165deg, #4e3014 0%, #8a5a2b 55%, #b07a42 100%);
+  background-image:
+    radial-gradient(ellipse 120% 60% at 50% -10%, rgba(255, 206, 120, 0.30), transparent 60%),
+    radial-gradient(ellipse 110% 55% at 50% 110%, rgba(56, 30, 9, 0.50), transparent 70%),
+    linear-gradient(165deg, #4e3014 0%, #8a5a2b 55%, #b07a42 100%);
   background-attachment: fixed;
 }
 
@@ -208,6 +212,100 @@ a {
   max-width: 720px;
   font-size: 18px;
   text-shadow: 0 0 2px #000;
+}
+
+/* sutta.stream landing: serif wordmark, tagline, hero verse, wave ornament */
+.theme-sutta .header__logo,
+.theme-sutta .home__logo {
+  font-family: var(--font-reading);
+}
+
+.theme-sutta .home__logo {
+  font-size: 54px;
+  letter-spacing: 0.5px;
+  padding-top: 24px;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+}
+
+.home__tagline {
+  text-align: center;
+  margin: 4px 0 30px;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0.85;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+}
+
+.epigraph {
+  display: block;
+  max-width: 620px;
+  margin: 0 auto 34px;
+  padding: 30px 32px 20px;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 6px;
+  border-top: 3px solid var(--accent);
+  text-decoration: none;
+  text-align: center;
+  font-family: var(--font-reading);
+  font-size: 21px;
+  box-shadow: 0 12px 32px rgba(40, 22, 6, 0.35);
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.epigraph:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(40, 22, 6, 0.45);
+}
+
+.epigraph .words {
+  text-align: center;
+  pointer-events: none;
+}
+
+.epigraph__translation {
+  font-size: 15px;
+  font-style: italic;
+  color: var(--muted);
+  margin: 20px auto 10px;
+  max-width: 460px;
+}
+
+.epigraph__source {
+  display: block;
+  font-size: 12px;
+  font-family: var(--font-ui);
+  font-style: normal;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.home__waves {
+  display: block;
+  width: 96px;
+  margin: 0 auto 30px;
+  color: var(--highlight);
+  opacity: 0.6;
+}
+
+/* Cards sit on the warm ground with a soft lift */
+.theme-sutta .card {
+  border: none;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(40, 22, 6, 0.28);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.theme-sutta .card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px rgba(40, 22, 6, 0.4);
 }
 
 .home__search {
