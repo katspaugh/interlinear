@@ -181,10 +181,11 @@ export const removeText = intent('text.remove', z.object({ id: z.uuid() }), {
   emits: [textRemoved],
 })
 
-/** Ask for an imported, not-yet-glossed text to be glossed. Sent by the
- * reader when someone opens an 'unglossed' text — glossing is demand-driven,
- * so the community's reading decides what gets glossed first. Open to
- * everyone (not admin-gated); a no-op for texts in any other status. */
+/** Ask for a text to be glossed. Sent by the reader when someone opens an
+ * 'unglossed' (imported) or 'failed' text — glossing is demand-driven, so
+ * the community's reading decides what gets glossed first, and a failure
+ * heals on the next read. Open to everyone (not admin-gated); a no-op for
+ * texts that are queued or done. */
 export const requestGloss = intent(
   'text.requestGloss',
   z.object({ id: z.uuid() }),

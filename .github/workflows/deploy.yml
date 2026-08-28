@@ -1,10 +1,14 @@
 # Deploy to DigitalOcean App Platform.
 #
-# Applies .do/app.yaml (so spec changes in the repo reach the app — secrets
-# declared without values keep the values set in the DO console) and then
+# Applies .do/app.yaml (so spec changes in the repo reach the app) and then
 # triggers a deployment (the app pulls this repo's main branch itself, per
 # .do/app.yaml). Runs on every push to main, and can be run manually from
 # the Actions tab.
+#
+# IMPORTANT: updating an app with a spec that declares a SECRET env without
+# a value REPLACES the stored value with an empty one — it is not retained.
+# The merge step below copies the live app's encrypted secret values into
+# the repo spec before applying, so console-set secrets survive deploys.
 #
 # Requires one repository secret:
 #   DIGITALOCEAN_ACCESS_TOKEN — a DO API token with app deploy access
@@ -39,7 +43,33 @@ jobs:
             echo "No App Platform app named 'interlinear' found" >&2
             exit 1
           fi
-          echo "Applying .do/app.yaml to app $APP_ID"
-          doctl apps update "$APP_ID" --spec .do/app.yaml --wait
+          echo "Merging live secret values into .do/app.yaml"
+          doctl apps spec get "$APP_ID" > /tmp/live-spec.yaml
+          python3 - <<'EOF'
+          import yaml
+
+          live = yaml.safe_load(open('/tmp/live-spec.yaml'))
+          repo = yaml.safe_load(open('.do/app.yaml'))
+
+          def live_envs(service_name):
+              for svc in live.get('services') or []:
+                  if svc.get('name') == service_name:
+                      return {env['key']: env for env in svc.get('envs') or []}
+              return {}
+
+          for svc in repo.get('services') or []:
+              known = live_envs(svc.get('name'))
+              for env in svc.get('envs') or []:
+                  if env.get('type') == 'SECRET' and not env.get('value'):
+                      value = known.get(env['key'], {}).get('value')
+                      if value:
+                          env['value'] = value  # the EV[…] encrypted blob
+                      else:
+                          print(f"warning: secret {env['key']} has no live value")
+
+          yaml.safe_dump(repo, open('/tmp/merged-spec.yaml', 'w'))
+          EOF
+          echo "Applying merged spec to app $APP_ID"
+          doctl apps update "$APP_ID" --spec /tmp/merged-spec.yaml --wait
           echo "Deploying app $APP_ID"
           doctl apps create-deployment "$APP_ID" --wait

@@ -53,8 +53,11 @@ export function Reader() {
   const textId = detail.status === 'ready' ? detail.data?.text.id : undefined
   const textStatus = detail.status === 'ready' ? detail.data?.text.status : undefined
   useEffect(() => {
-    if (!textId || textStatus !== 'unglossed' || glossRequested.current === textId)
-      return
+    // 'failed' also re-queues: a past failure (an outage, a missing key)
+    // heals the next time somebody opens the text. The ref bounds it to one
+    // request per text per page view.
+    const wanted = textStatus === 'unglossed' || textStatus === 'failed'
+    if (!textId || !wanted || glossRequested.current === textId) return
     glossRequested.current = textId
     void send(requestGloss, { id: textId })
   }, [textId, textStatus, send])

@@ -248,9 +248,11 @@ export async function createApp(connectionString: string): Promise<InterlinearAp
     if (!found.rows[0]) {
       return err(intentEffectError('not_found', 'text not found'))
     }
-    // Only imported texts wait in 'unglossed'; any other status means the
-    // work is already queued, done, or failed — nothing to do.
-    if (found.rows[0].status !== 'unglossed') return
+    // 'unglossed' texts wait for their first reader; 'failed' ones get a
+    // fresh attempt (already-glossed chunks are kept — the worker only
+    // picks up chunks without words). Anything else is queued or done.
+    const status = found.rows[0].status
+    if (status !== 'unglossed' && status !== 'failed') return
     const queued = await tx.query<{ n: string }>(
       `select count(*) as n from texts where status = 'glossing'`,
     )
