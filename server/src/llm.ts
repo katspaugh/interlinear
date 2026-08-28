@@ -293,6 +293,8 @@ ${paliPrefixReference()}`
 - etymology: the root and derivation, with cognates in languages the learner is likely to know (English, Latin, Greek, related modern languages) where they genuinely illuminate; when a prefix shapes the word, show how its concrete spatial sense became the abstract meaning; null otherwise
 - morphemes: the word built up morpheme by morpheme, in reading order — for each: part (the segment), kind ("prefix", "root", "stem", or "ending"), gloss (one or two words), and note (one or two sentences: for prefixes and roots, the concrete imagery behind the meaning and genuine cognates; for endings, what the inflection does in this sentence). Include only morphemes you are certain of; null for words that do not decompose or that you cannot analyze confidently — never guess.
 
+Call words cognates only when they demonstrably descend from the same ancestral root; similarity of form or meaning is not evidence (German "haben" and Latin "habere" match in both, yet are unrelated). Never present a loanword source, calque, or mere semantic parallel as a cognate, and when the shared origin is uncertain, omit the cognate rather than guess.
+
 If the word looks misspelled or is not attested, resolve it to the closest attested form and note that in the grammar field.
 
 ${depth}
