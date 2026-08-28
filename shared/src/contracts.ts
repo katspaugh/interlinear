@@ -1,15 +1,19 @@
 import { z } from 'zod'
 import { event, intent, projection } from '@intenteffect/core'
+import { morphKindSchema, morphSchema } from './morphology.js'
 
 /* ------------------------------------------------------------------ */
 /* Schemas                                                             */
 /* ------------------------------------------------------------------ */
 
-/** One token with its interlinear gloss. `nl` marks a line break after it. */
+/** One token with its interlinear gloss. `nl` marks a line break after it;
+ * `m` is the optional morpheme segmentation (see morphology.ts) — absent on
+ * texts glossed before morphology existed and on unsegmentable tokens. */
 export const wordSchema = z.object({
   w: z.string(),
   g: z.string(),
   nl: z.boolean().optional(),
+  m: z.array(morphSchema).optional(),
 })
 export type Word = z.output<typeof wordSchema>
 
@@ -62,13 +66,26 @@ export type TextDetail = z.output<typeof textDetailSchema>
 export const definitionTierSchema = z.enum(['fast', 'deep'])
 export type DefinitionTier = z.output<typeof definitionTierSchema>
 
-/** An LLM-generated dictionary entry for a word. */
+/** One morpheme of a dictionary entry's "built from" stack: the segment,
+ * its kind, a one-word gloss, and a short note telling the morpheme's story
+ * (spatial imagery, cognates in languages the learner knows). */
+export const definitionMorphemeSchema = z.object({
+  part: z.string(),
+  kind: morphKindSchema,
+  gloss: z.string(),
+  note: z.string(),
+})
+export type DefinitionMorpheme = z.output<typeof definitionMorphemeSchema>
+
+/** An LLM-generated dictionary entry for a word. `morphemes` is nullish so
+ * entries cached before morphology existed still validate. */
 export const definitionSchema = z.object({
   headword: z.string(),
   grammar: z.string(),
   meanings: z.array(z.string()),
   analysis: z.string().nullable(),
   etymology: z.string().nullable(),
+  morphemes: z.array(definitionMorphemeSchema).nullish(),
 })
 export type Definition = z.output<typeof definitionSchema>
 

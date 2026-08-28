@@ -27,7 +27,7 @@ const EPIGRAPH: Word[] = [
 function Epigraph() {
   return (
     <Link to="/text/ovada-patimokkha" className="epigraph">
-      <Words words={EPIGRAPH} showGlosses={true} />
+      <Words words={EPIGRAPH} />
       <p className="epigraph__translation">
         Not to do any evil, to cultivate the wholesome, to purify one’s own
         mind — this is the teaching of the Buddhas.

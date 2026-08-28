@@ -17,7 +17,7 @@ export function TextCard(props: { text: TextSummary }) {
 
       <div className="card__body">
         {text.preview ? (
-          <Words words={text.preview} showGlosses={true} />
+          <Words words={text.preview} />
         ) : (
           <p className="card__pending">
             {text.status === 'failed'

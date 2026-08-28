@@ -6,6 +6,7 @@ import {
   type Definition,
   type DefinitionTier,
 } from '@interlinear/shared'
+import { isKnown, toggleKnown, useWordKnowledge } from '../knownWords.js'
 import { Spinner } from './Spinner.js'
 
 function Entry(props: { definition: Definition; detailed: boolean }) {
@@ -22,6 +23,24 @@ function Entry(props: { definition: Definition; detailed: boolean }) {
           <li key={i}>{meaning}</li>
         ))}
       </ol>
+      {definition.morphemes && definition.morphemes.length > 0 && (
+        <div className="definition__morphs">
+          <h4 className="definition__morphs-heading">Built from</h4>
+          {definition.morphemes.map((morpheme, i) => (
+            <div className="definition__morph" key={i}>
+              <span className={`definition__morph-chip definition__morph-chip_${morpheme.kind}`}>
+                {morpheme.part}
+              </span>
+              <span className="definition__morph-body">
+                <span className="definition__morph-kind">
+                  {morpheme.kind} · {morpheme.gloss}
+                </span>
+                {morpheme.note}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
       {definition.analysis && (
         <p>
           <b>Analysis.</b> {definition.analysis}
@@ -49,6 +68,8 @@ export function DefinitionPanel(props: {
   gloss: string | null
 }) {
   const send = useSend()
+  useWordKnowledge()
+  const known = isKnown(props.lang, props.word)
   const fast = useProjection(wordDefinition, {
     lang: props.lang,
     word: props.word,
@@ -153,6 +174,23 @@ export function DefinitionPanel(props: {
             )}
           </div>
         )}
+
+        <div className="definition__known">
+          <button
+            className={`btn btn_transparent-blue ${known ? 'definition__known-btn_active' : ''}`}
+            aria-pressed={known}
+            onClick={() => toggleKnown(props.lang, props.word)}
+          >
+            {known ? '✓ Known — gloss hidden' : 'I know this word'}
+          </button>
+          <p className="definition__known-hint">
+            {known
+              ? 'Its gloss is faded out everywhere; hover the word to peek. Remembered in this browser only.'
+              : 'Fades its gloss out in every text, so the page slowly becomes bare ' +
+                props.lang +
+                '.'}
+          </p>
+        </div>
       </div>
     </div>
   )

@@ -12,21 +12,33 @@ import {
 } from '@interlinear/shared'
 import { adminUiVisible, getAdminToken, setAdminToken } from '../admin.js'
 import { isRead, toggleRead, useReadMarks } from '../readMarks.js'
+import { recordTextSeen } from '../knownWords.js'
 import { DefinitionPanel } from '../components/DefinitionPanel.js'
 import { Spinner } from '../components/Spinner.js'
-import { Words } from '../components/Words.js'
+import { Words, type GlossMode } from '../components/Words.js'
 
 interface SelectedWord {
   word: string
   gloss: string | null
 }
 
+const GLOSS_MODES: { id: GlossMode; label: string; title: string }[] = [
+  { id: 'fluent', label: 'Glosses', title: 'Fluent gloss above each word' },
+  {
+    id: 'literal',
+    label: 'Literal',
+    title: 'Morpheme-by-morpheme reading, e.g. "mind·before·going"',
+  },
+  { id: 'off', label: 'Off', title: 'Bare text — hover a word to peek' },
+]
+
 export function Reader() {
   const { slug = '' } = useParams()
   const navigate = useNavigate()
   const send = useSend()
   const detail = useProjection(textDetail, { slug })
-  const [showGlosses, setShowGlosses] = useState(true)
+  const [glossMode, setGlossMode] = useState<GlossMode>('fluent')
+  const [showMorphs, setShowMorphs] = useState(true)
   const [showTranslation, setShowTranslation] = useState(false)
   const [selected, setSelected] = useState<SelectedWord | null>(null)
   useReadMarks()
@@ -47,6 +59,20 @@ export function Reader() {
     void send(requestGloss, { id: textId })
   }, [textId, textStatus, send])
 
+  // Once a text is fully glossed and open in front of the reader, count its
+  // words into this browser's exposure counts (once per text) — glosses of
+  // words seen in previously read texts start out faded.
+  useEffect(() => {
+    if (textStatus !== 'ready' || detail.status !== 'ready' || !detail.data) return
+    const { text, chunks } = detail.data
+    recordTextSeen(
+      text.lang,
+      text.slug,
+      chunks.flatMap((chunk) => chunk.words ?? []).map((word) => normalizeWord(word.w)),
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [textStatus, slug])
+
   if (detail.status === 'loading') return <Spinner />
   if (detail.status === 'error') {
     return (
@@ -66,6 +92,9 @@ export function Reader() {
 
   const { text, chunks } = detail.data
   const scUrl = suttaCentralUrl(text)
+  const hasMorphs = chunks.some((chunk) =>
+    chunk.words?.some((word) => word.m && word.m.length > 1),
+  )
 
   // Fired on pointerdown: kick off the server-side lookup before the click
   // even lands, so the entry is a few ms closer when the sidebar opens.
@@ -108,14 +137,32 @@ export function Reader() {
     <div className="container reader">
       <div className="reader__text">
         <div className="reader__controls">
-          <label className="reader__toggle">
-            <input
-              type="checkbox"
-              checked={showGlosses}
-              onChange={(e) => setShowGlosses(e.target.checked)}
-            />{' '}
-            Word glosses
-          </label>
+          <div className="reader__seg" role="group" aria-label="Gloss mode">
+            {GLOSS_MODES.map((mode) => (
+              <button
+                key={mode.id}
+                type="button"
+                title={mode.title}
+                aria-pressed={glossMode === mode.id}
+                onClick={() => setGlossMode(mode.id)}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+          {hasMorphs && (
+            <label
+              className="reader__toggle"
+              title="Underline each word's morphemes: prefix, root, ending"
+            >
+              <input
+                type="checkbox"
+                checked={showMorphs}
+                onChange={(e) => setShowMorphs(e.target.checked)}
+              />{' '}
+              Morphemes
+            </label>
+          )}
           <label className="reader__toggle">
             <input
               type="checkbox"
@@ -182,7 +229,9 @@ export function Reader() {
             {chunk.words ? (
               <Words
                 words={chunk.words}
-                showGlosses={showGlosses}
+                lang={text.lang}
+                glossMode={glossMode}
+                showMorphs={showMorphs}
                 onWordClick={selectWord}
                 onWordDown={prefetchWord}
                 selectedWord={selected?.word}

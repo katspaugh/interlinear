@@ -24,6 +24,12 @@
   --form-bg: rgba(0, 138, 204, 0.85);
   --font-ui: Helvetica, Arial, sans-serif;
   --font-reading: Helvetica, Arial, sans-serif;
+  /* Morpheme seams. Same on both themes: a prefix keeps its color across
+   * sites, so recognition built on one carries to the other. */
+  --m-prefix: #b45309;
+  --m-root: #3f6b4a;
+  --m-stem: #9db5a0;
+  --m-ending: #c2b59b;
 }
 
 /* sutta.stream: monastic-robe ochres and palm-leaf parchment */
@@ -573,6 +579,33 @@ a {
   cursor: pointer;
 }
 
+/* Gloss mode: fluent / literal (morpheme-by-morpheme) / off */
+.reader__seg {
+  display: inline-flex;
+  border: 1px solid var(--accent-strong);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.reader__seg button {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 3px 10px;
+  border: none;
+  background: var(--paper);
+  color: var(--accent-strong);
+  cursor: pointer;
+}
+
+.reader__seg button + button {
+  border-left: 1px solid var(--accent-strong);
+}
+
+.reader__seg button[aria-pressed='true'] {
+  background: var(--accent-strong);
+  color: var(--paper);
+}
+
 .reader__delete {
   background: none;
   border: none;
@@ -674,6 +707,12 @@ a {
   visibility: hidden;
 }
 
+/* Bare-text mode still lets the reader peek at a gloss on hover */
+.words_hide-glosses .word_clickable:hover .word__gloss,
+.words_hide-glosses .word_selected .word__gloss {
+  visibility: visible;
+}
+
 .word_clickable {
   cursor: pointer;
 }
@@ -689,7 +728,9 @@ a {
   color: var(--muted);
 }
 
-/* Repeated words: their glosses fade away */
+/* Familiar words: their glosses fade away. Levels 1–3 come from repetition
+ * (in-page and across previously read texts); level 4 — fully dissolved,
+ * hover to peek — from the reader marking the word known. */
 .word_occur_1 .word__gloss {
   color: var(--gloss-1);
 }
@@ -701,6 +742,37 @@ a {
 }
 .word_occur_4 .word__gloss {
   color: var(--gloss-4);
+}
+
+/* Morpheme seams: each segment of a decomposed word underlined by kind,
+ * with a hairline gap at every seam. Rendered only when the reader's
+ * "Morphemes" toggle is on (the spans are absent otherwise). */
+.word__morph {
+  border-bottom: 2px solid transparent;
+  padding-bottom: 1px;
+}
+.word__morph + .word__morph {
+  margin-left: 1px;
+}
+.word__morph_prefix {
+  border-bottom-color: var(--m-prefix);
+}
+.word__morph_root {
+  border-bottom-color: var(--m-root);
+}
+.word__morph_stem {
+  border-bottom-color: var(--m-stem);
+}
+.word__morph_ending {
+  border-bottom-color: var(--m-ending);
+}
+
+/* Sandhi seam: two words fused in one surface token. */
+.word__sandhi {
+  color: var(--accent);
+  font-size: 0.6em;
+  vertical-align: 0.35em;
+  padding: 0 1px;
 }
 
 /* Cards render a smaller interlinear */
@@ -808,6 +880,76 @@ a {
   padding: 1px 6px;
   margin-left: 8px;
   vertical-align: middle;
+}
+
+/* "Built from": the word's morphemes as chips, each with its story */
+.definition__morphs {
+  margin: 0 0 12px;
+}
+
+.definition__morphs-heading {
+  font-size: 11px;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+
+.definition__morph {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.definition__morph-chip {
+  font-family: var(--font-reading);
+  font-size: 15px;
+  padding: 0 6px 1px;
+  border-radius: 3px;
+  background: var(--highlight);
+  border-bottom: 2px solid var(--m-root);
+  white-space: nowrap;
+}
+
+.definition__morph-chip_prefix {
+  border-bottom-color: var(--m-prefix);
+}
+.definition__morph-chip_stem {
+  border-bottom-color: var(--m-stem);
+}
+.definition__morph-chip_ending {
+  border-bottom-color: var(--m-ending);
+}
+
+.definition__morph-body {
+  line-height: 1.4;
+}
+
+.definition__morph-kind {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.definition__known {
+  margin-top: 15px;
+  text-align: center;
+}
+
+.definition__known-btn_active {
+  background: var(--accent-strong);
+  color: var(--paper);
+}
+
+.definition__known-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 8px 0 0;
 }
 
 .definition__more {

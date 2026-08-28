@@ -2,10 +2,13 @@ import Anthropic from '@anthropic-ai/sdk'
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod'
 import { z } from 'zod'
 import {
+  morphsAlign,
+  paliPrefixReference,
   textKindPreset,
   tokenizeChunk,
   type Definition,
   type DefinitionTier,
+  type Morph,
   type Word,
 } from '@interlinear/shared'
 
@@ -112,7 +115,12 @@ function glossSystem(lang: string, kind: string): string {
   const preset = textKindPreset(kind)
   return `You are an expert philologist of ${lang}, preparing interlinear glosses for language learners.
 
-For each numbered token you receive, produce a concise English gloss (1–4 words) that reflects the token's inflected form: case, number, tense, voice, participles, contractions. Gloss compounds as a whole. Particles get their function ("and", "indeed", "quotation marker"). Keep glosses lowercase except proper names. Return exactly one gloss per token, in the same order.
+For each numbered token you receive, return one entry with:
+
+- "g": a concise English gloss (1–4 words) that reflects the token's inflected form: case, number, tense, voice, participles, contractions. Gloss compounds as a whole. Particles get their function ("and", "indeed", "quotation marker"). Keep glosses lowercase except proper names.
+- "m": the token's morpheme segmentation, or null. Each segment has "s" (the exact characters of the segment), "k" (one of "prefix", "root", "stem", "ending"), "g" (a one-word gloss of the morpheme where it carries meaning — compound members, prefixes, roots; null for purely grammatical endings), and "sandhi" (true only on a segment that begins a second word fused into this token by sandhi or contraction; null otherwise). The segments MUST concatenate exactly, character for character, to the token as written — including capitalization and any punctuation, which belongs to the last segment. Segment only what you are certain of: for single-morpheme words, particles, names, or any token you cannot segment confidently, return null — never guess.
+
+Return exactly one entry per token, in the same order.
 
 Also produce a fluent, accurate English translation of the whole passage.
 
@@ -121,13 +129,44 @@ ${preset.glossHint}`
 
 const COMPAT_JSON_INSTRUCTION = `
 
-Respond with ONLY a JSON object of the shape {"glosses": string[], "translation": string} — no markdown fences, no commentary.`
+Respond with ONLY a JSON object of the shape {"words": {"g": string, "m": {"s": string, "k": "prefix"|"root"|"stem"|"ending", "g": string|null, "sandhi": boolean|null}[]|null}[], "translation": string} — no markdown fences, no commentary.`
 
+/* Structured outputs handle explicit nulls better than absent fields, so the
+ * LLM-facing schema is all-nullable; glossChunk converts to the compact
+ * contract shape (optional fields, nulls dropped). */
+const glossMorphSchema = z.object({
+  s: z.string(),
+  k: z.enum(['prefix', 'root', 'stem', 'ending']),
+  g: z.string().nullish(),
+  sandhi: z.boolean().nullish(),
+})
 const glossResultSchema = z.object({
-  glosses: z.array(z.string()),
+  words: z.array(
+    z.object({
+      g: z.string(),
+      m: z.array(glossMorphSchema).nullish(),
+    }),
+  ),
   translation: z.string(),
 })
 type GlossResult = z.output<typeof glossResultSchema>
+
+/** Convert one LLM word entry's segmentation to the contract shape, dropping
+ * it entirely when it breaks the concatenation invariant or carries no
+ * information beyond the whole word. */
+export function sanitizeMorphs(
+  surface: string,
+  morphs: z.output<typeof glossMorphSchema>[] | null | undefined,
+): Morph[] | undefined {
+  if (!morphs || morphs.length < 2) return undefined
+  const converted: Morph[] = morphs.map((m) => ({
+    s: m.s,
+    k: m.k,
+    ...(m.g ? { g: m.g } : {}),
+    ...(m.sandhi ? { sandhi: true } : {}),
+  }))
+  return morphsAlign(surface, converted) ? converted : undefined
+}
 
 async function requestGloss(system: string, prompt: string): Promise<GlossResult> {
   if (!GLOSS_BASE_URL) {
@@ -205,13 +244,17 @@ ${tokenList}`
       glossSystem(context.lang, context.kind),
       prompt + corrective,
     )
-    if (parsed.glosses.length === tokens.length) {
+    if (parsed.words.length === tokens.length) {
       return {
-        words: tokens.map((t, i) => ({ ...t, g: parsed.glosses[i]! })),
+        words: tokens.map((t, i) => {
+          const entry = parsed.words[i]!
+          const m = sanitizeMorphs(t.w, entry.m)
+          return { ...t, g: entry.g, ...(m ? { m } : {}) }
+        }),
         translation: parsed.translation.trim(),
       }
     }
-    corrective = `\n\nIMPORTANT: your previous answer had ${parsed.glosses.length} glosses but there are exactly ${tokens.length} tokens. Return exactly ${tokens.length} glosses, one per numbered token.`
+    corrective = `\n\nIMPORTANT: your previous answer had ${parsed.words.length} word entries but there are exactly ${tokens.length} tokens. Return exactly ${tokens.length} entries, one per numbered token.`
   }
   throw new Error('the model could not align glosses with the tokens')
 }
@@ -226,6 +269,12 @@ function definitionSystem(lang: string, kind: string, tier: DefinitionTier): str
     tier === 'fast'
       ? 'Keep the entry compact — the reader is waiting on a popup: 2–4 meanings as short phrases, and analysis and etymology of one or two sentences each, without extended citations.'
       : 'Write a thorough entry: cover the range of meanings with nuances, give a full morphological analysis, and include etymology with cognates and, where illuminating, canonical usage examples.'
+  const paliPrefixes = /\bpali\b/i.test(lang)
+    ? `
+
+Reference — the concrete imagery and cognates of the Pali prefixes; keep every morpheme note consistent with it:
+${paliPrefixReference()}`
+    : ''
   return `You are an expert lexicographer of ${lang}. Given one word as it appears in a text (an inflected surface form, possibly a compound or contraction), write a dictionary entry for language learners:
 
 - headword: the lemma (citation form) the surface form belongs to
@@ -233,12 +282,13 @@ function definitionSystem(lang: string, kind: string, tier: DefinitionTier): str
 - meanings: the principal English meanings, most relevant first
 - analysis: for compounds, contractions, and sandhi forms, the breakdown into parts with the meaning of each part; null for simple words
 - etymology: the root and derivation, with cognates in languages the learner is likely to know (English, Latin, Greek, related modern languages) where they genuinely illuminate; when a prefix shapes the word, show how its concrete spatial sense became the abstract meaning; null otherwise
+- morphemes: the word built up morpheme by morpheme, in reading order — for each: part (the segment), kind ("prefix", "root", "stem", or "ending"), gloss (one or two words), and note (one or two sentences: for prefixes and roots, the concrete imagery behind the meaning and genuine cognates; for endings, what the inflection does in this sentence). Include only morphemes you are certain of; null for words that do not decompose or that you cannot analyze confidently — never guess.
 
 If the word looks misspelled or is not attested, resolve it to the closest attested form and note that in the grammar field.
 
 ${depth}
 
-${preset.definitionHint}`.trimEnd()
+${preset.definitionHint}${paliPrefixes}`.trimEnd()
 }
 
 const definitionResultSchema = z.object({
@@ -247,6 +297,16 @@ const definitionResultSchema = z.object({
   meanings: z.array(z.string()),
   analysis: z.string().nullable(),
   etymology: z.string().nullable(),
+  morphemes: z
+    .array(
+      z.object({
+        part: z.string(),
+        kind: z.enum(['prefix', 'root', 'stem', 'ending']),
+        gloss: z.string(),
+        note: z.string(),
+      }),
+    )
+    .nullable(),
 })
 
 export async function defineWordLlm(

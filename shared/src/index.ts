@@ -1,5 +1,6 @@
 export * from './contracts.js'
 export * from './library.js'
+export * from './morphology.js'
 export * from './presets.js'
 export * from './search.js'
 export * from './sites.js'

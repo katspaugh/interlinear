@@ -15,6 +15,21 @@ intent → authoritative server effect → event → synchronized projection
 Glossing happens live: paste a text, and stanzas fill in with glosses in every
 open tab as the background worker finishes them — no refresh, no polling.
 
+Two layers turn reading into learning:
+
+- **Morphology.** Glossed words carry their morpheme segmentation
+  (`shared/src/morphology.ts`), rendered as colored seams — prefix, root,
+  stem, ending — with sandhi joints marked. A **Literal** gloss mode reads
+  each word morpheme by morpheme ("mind·before·going"); dictionary entries
+  build the word up segment by segment, each with the concrete spatial
+  imagery behind its abstract meaning and cognates the reader already knows,
+  grounded in a hand-curated table of the Pali prefixes.
+- **Reader memory.** Glosses of familiar words fade: repeated words within a
+  page, words seen in previously finished texts, and words marked "I know
+  this word" (fully dissolved — hover to peek). Kept per language in
+  localStorage (`web/src/knownWords.ts`), never sent to the server; the page
+  turns into bare Pali as the reader's exposure grows.
+
 ## How it works
 
 - **`shared/`** — the IntentEffect contracts (Zod-validated events, intents,
