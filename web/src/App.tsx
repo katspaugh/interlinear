@@ -6,8 +6,7 @@ export function Logo() {
   if (site.id === 'sutta') {
     return (
       <>
-        sutta<span className="logo__dot">.</span>
-        <span className="logo__stream">stream</span>
+        sutta<span className="logo__dot">.</span>stream
       </>
     )
   }

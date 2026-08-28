@@ -170,199 +170,30 @@ a {
   color: var(--highlight);
 }
 
-/* Impermanence, Kusama-style: the word "stream" is filled with polka
- * dots — three layers of ochre, umber and parchment — that drift slowly
- * downstream while each layer's dots swell and shrink on its own beat,
- * so the pulse wanders through the word. The letters never move.
- * Em units keep everything proportional at header (22px) and hero
- * (54px) sizes; drift end positions are whole multiples of each tile so
- * the loop is seamless. The dot radii animate via registered custom
- * properties — without @property support the dots render statically,
- * and without background-clip: text the word stays plain white. */
-@property --pulse-a {
-  syntax: '<percentage>';
-  inherits: false;
-  initial-value: 24%;
-}
-
-@property --pulse-b {
-  syntax: '<percentage>';
-  inherits: false;
-  initial-value: 22%;
-}
-
-@property --pulse-c {
-  syntax: '<percentage>';
-  inherits: false;
-  initial-value: 26%;
-}
-
-@supports ((-webkit-background-clip: text) or (background-clip: text)) {
-  .logo__stream {
-    background-color: #fff;
-    background-image:
-      radial-gradient(circle, var(--accent) var(--pulse-a, 24%), transparent calc(var(--pulse-a, 24%) + 4%)),
-      radial-gradient(circle, var(--chrome) var(--pulse-b, 22%), transparent calc(var(--pulse-b, 22%) + 4%)),
-      radial-gradient(circle, var(--highlight) var(--pulse-c, 26%), transparent calc(var(--pulse-c, 26%) + 4%));
-    background-size:
-      0.46em 0.46em,
-      0.37em 0.37em,
-      0.29em 0.29em;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    /* the hero's text-shadow would show through the transparent fill */
-    text-shadow: none;
-    animation:
-      impermanence 16s linear infinite,
-      pulse-a 3.3s ease-in-out infinite,
-      pulse-b 4.7s ease-in-out -1.2s infinite,
-      pulse-c 2.6s ease-in-out -0.7s infinite;
-  }
+/* Impermanence, museum-quiet: the only motion on the page is the dot of
+ * the wordmark, breathing on a slow eight-second cycle — there and
+ * almost not there. Everything else holds still. */
+.theme-sutta .logo__dot {
+  animation: impermanence 8s ease-in-out infinite;
 }
 
 @keyframes impermanence {
-  from {
-    background-position:
-      0 0,
-      0.1em 0.18em,
-      0.15em 0.08em;
-  }
-  to {
-    background-position:
-      0.92em 0.46em,
-      -0.64em 0.55em,
-      0.73em -0.21em;
-  }
-}
-
-@keyframes pulse-a {
-  0%,
-  100% {
-    --pulse-a: 15%;
-  }
-  50% {
-    --pulse-a: 32%;
-  }
-}
-
-@keyframes pulse-b {
-  0%,
-  100% {
-    --pulse-b: 30%;
-  }
-  50% {
-    --pulse-b: 14%;
-  }
-}
-
-@keyframes pulse-c {
-  0%,
-  100% {
-    --pulse-c: 16%;
-  }
-  50% {
-    --pulse-c: 33%;
-  }
-}
-
-/* — Kusama in spirit, not stencil: one motif, repeated with devotion,
- * in exactly one place — the home ground becomes a quiet infinity room
- * that the dot-filled wordmark dissolves into (self-obliteration, which
- * is also this site's subject). Two dot fields float over the dawn
- * gradient (background-attachment: fixed, so they parallax against it):
- * a far layer of big soft lantern dots with small umber ones, and a
- * nearer parchment layer counter-drifting and slowly breathing. Drift
- * distances are whole multiples of every tile so the loops are seamless,
- * and the layers ride on transform/opacity only, so the animation stays
- * on the compositor. Everything else stays plain — dots never decorate
- * chrome or sit behind body text. */
-.theme-sutta .page_home {
-  position: relative;
-  z-index: 0;
-  overflow: hidden;
-}
-
-.theme-sutta .page_home::before,
-.theme-sutta .page_home::after {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: -240px;
-  pointer-events: none;
-}
-
-.theme-sutta .page_home::before {
-  background-image:
-    radial-gradient(circle, rgba(255, 210, 130, 0.13) 0, rgba(255, 210, 130, 0.13) 34px, transparent 52px),
-    radial-gradient(circle, rgba(56, 30, 9, 0.16) 3px, transparent 4px);
-  background-size:
-    240px 240px,
-    80px 80px;
-  animation: dream-drift-a 110s linear infinite;
-}
-
-.theme-sutta .page_home::after {
-  background-image: radial-gradient(circle, rgba(240, 220, 180, 0.16) 5px, transparent 6px);
-  background-size: 160px 160px;
-  background-position: 40px 70px;
-  animation:
-    dream-drift-b 70s linear infinite,
-    dream-twinkle 9s ease-in-out infinite;
-}
-
-@keyframes dream-drift-a {
-  to {
-    transform: translate(-240px, 240px);
-  }
-}
-
-@keyframes dream-drift-b {
-  to {
-    transform: translate(160px, 160px);
-  }
-}
-
-@keyframes dream-twinkle {
   0%,
   100% {
     opacity: 1;
   }
   50% {
-    opacity: 0.55;
+    opacity: 0.4;
   }
 }
 
-/* The wave ornament becomes a stream of dots, flowing downstream:
- * zero-length dashes with round caps render as circles, and the offset
- * animates by whole periods so the loop is seamless. */
-.theme-sutta .home__waves {
-  width: 120px;
-  opacity: 0.8;
-}
-
-.theme-sutta .home__waves path {
-  stroke-width: 3;
-  stroke-dasharray: 0 6;
-  animation: waves-flow 14s linear infinite;
-}
-
-@keyframes waves-flow {
-  to {
-    stroke-dashoffset: -60;
-  }
-}
-
-/* The loading spinner's bouncing dots join the palette */
+/* The loading spinner's dots join the palette */
 .theme-sutta .sk-three-bounce .sk-child {
   background-color: var(--highlight);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .logo__stream,
-  .theme-sutta .page_home::before,
-  .theme-sutta .page_home::after,
-  .theme-sutta .home__waves path {
+  .theme-sutta .logo__dot {
     animation: none;
   }
 }
@@ -441,20 +272,22 @@ a {
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
 }
 
+/* Mounted like a work in a gallery: white mat, hairline frame, generous
+ * margins, a soft even shadow — no colored trim. */
 .epigraph {
   display: block;
   max-width: 620px;
-  margin: 0 auto 34px;
-  padding: 30px 32px 20px;
+  margin: 0 auto 44px;
+  padding: 42px 44px 26px;
   background: var(--paper);
   color: var(--ink);
-  border-radius: 6px;
-  border-top: 3px solid var(--accent);
+  border-radius: 2px;
+  border: 1px solid rgba(59, 49, 40, 0.14);
   text-decoration: none;
   text-align: center;
   font-family: var(--font-reading);
   font-size: 21px;
-  box-shadow: 0 12px 32px rgba(40, 22, 6, 0.35);
+  box-shadow: 0 18px 50px rgba(40, 22, 6, 0.25);
   transition:
     transform 200ms ease,
     box-shadow 200ms ease;
@@ -462,7 +295,7 @@ a {
 
 .epigraph:hover {
   transform: translateY(-2px);
-  box-shadow: 0 16px 40px rgba(40, 22, 6, 0.45);
+  box-shadow: 0 22px 56px rgba(40, 22, 6, 0.32);
 }
 
 .epigraph .words {
@@ -496,19 +329,46 @@ a {
   opacity: 0.6;
 }
 
-/* Cards sit on the warm ground with a soft lift */
+/* Museum air: the landing composition breathes — a taller top margin,
+ * wider letter-spacing on the small caption, a quieter ornament — and
+ * cards sit flat and square like framed prints. */
+.theme-sutta .home__logo {
+  padding-top: 48px;
+}
+
+.theme-sutta .home__tagline {
+  letter-spacing: 4px;
+  margin: 10px 0 48px;
+  opacity: 0.75;
+}
+
+.theme-sutta .home__hero {
+  max-width: 640px;
+  line-height: 1.7;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.theme-sutta .home__waves {
+  opacity: 0.45;
+}
+
+.theme-sutta .library__collection {
+  letter-spacing: 3px;
+  opacity: 0.75;
+}
+
 .theme-sutta .card {
   border: none;
-  border-radius: 6px;
-  box-shadow: 0 4px 14px rgba(40, 22, 6, 0.28);
+  border-radius: 2px;
+  box-shadow: 0 2px 10px rgba(40, 22, 6, 0.22);
   transition:
     transform 180ms ease,
     box-shadow 180ms ease;
 }
 
 .theme-sutta .card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 26px rgba(40, 22, 6, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(40, 22, 6, 0.3);
 }
 
 .home__search {
