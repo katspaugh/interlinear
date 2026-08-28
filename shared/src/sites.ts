@@ -26,6 +26,8 @@ export interface SiteConfig {
   favicon: string
   /** Absolute og:image URL, when the site has one. */
   ogImage?: string
+  /** Placeholder for the library search box, naming what's searchable here. */
+  searchPlaceholder: string
   /** Show only texts of this kind on the home page (undefined = all). */
   onlyKind?: string
   /** Cap how many texts of a kind the home page shows (kinds not listed are
@@ -47,6 +49,7 @@ export const INTERLINEAR_SITE: SiteConfig = {
   themeColor: '#008acc',
   favicon: '/favicon.ico',
   ogImage: 'https://interlinear.cc/img/books.jpg',
+  searchPlaceholder: 'Search by title, author, or language…',
   kindCaps: { sutta: 2 },
 }
 
@@ -62,6 +65,7 @@ export const SUTTA_SITE: SiteConfig = {
   themeClass: 'theme-sutta',
   themeColor: '#6e441f',
   favicon: '/favicon-sutta.svg',
+  searchPlaceholder: 'Search by collection, number, or title…',
   onlyKind: 'sutta',
 }
 

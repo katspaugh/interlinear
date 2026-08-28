@@ -210,6 +210,33 @@ a {
   text-shadow: 0 0 2px #000;
 }
 
+.home__search {
+  max-width: 440px;
+  margin: 0 auto 25px;
+}
+
+.home__search-input {
+  display: block;
+  width: 100%;
+  font-size: 16px;
+  font-family: inherit;
+  padding: 9px 16px;
+  border: 1px solid var(--accent-strong);
+  border-radius: 20px;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.home__search-input::placeholder {
+  color: var(--muted);
+}
+
+.home__empty {
+  text-align: center;
+  text-shadow: 0 0 2px #000;
+  margin-bottom: 40px;
+}
+
 .home__cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

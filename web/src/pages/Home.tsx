@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useProjection } from '@intenteffect/react'
-import { filterLibrary, textLibrary } from '@interlinear/shared'
+import { filterLibrary, searchLibrary, textLibrary } from '@interlinear/shared'
 import { Logo } from '../App.js'
 import { AddTextForm } from '../components/AddTextForm.js'
 import { Spinner } from '../components/Spinner.js'
@@ -32,6 +33,19 @@ function Hero() {
 
 export function Home() {
   const texts = useProjection(textLibrary)
+  const [query, setQuery] = useState('')
+  const searching = query.trim() !== ''
+
+  // A search reaches past the home-page kind caps (interlinear.cc features
+  // only a taste of the suttas, but "dhammapada" should still find them
+  // all); onlyKind stays — sutta.stream searches suttas only.
+  const shown =
+    texts.status === 'ready'
+      ? searchLibrary(
+          filterLibrary(searching ? { ...site, kindCaps: undefined } : site, texts.data),
+          query,
+        )
+      : []
 
   return (
     <div className="container home">
@@ -50,11 +64,27 @@ export function Home() {
         </p>
       )}
       {texts.status === 'ready' && (
-        <div className="home__cards">
-          {filterLibrary(site, texts.data).map((text) => (
-            <TextCard key={text.id} text={text} />
-          ))}
-        </div>
+        <>
+          <div className="home__search">
+            <input
+              type="search"
+              className="home__search-input"
+              placeholder={site.searchPlaceholder}
+              aria-label="Search the library"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </div>
+          {shown.length === 0 && searching ? (
+            <p className="home__empty">Nothing matches “{query.trim()}”.</p>
+          ) : (
+            <div className="home__cards">
+              {shown.map((text) => (
+                <TextCard key={text.id} text={text} />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <AddTextForm />
