@@ -22,15 +22,20 @@ test('sutta.stream shows only suttas, uncapped', () => {
   )
 })
 
-test('interlinear.cc caps suttas but keeps everything else', () => {
-  assert.deepEqual(INTERLINEAR_SITE.kindCaps, { sutta: 2 })
+test('interlinear.cc shows one sutta, sunk below everything else', () => {
+  assert.deepEqual(INTERLINEAR_SITE.kindCaps, { sutta: 1 })
+  assert.deepEqual(INTERLINEAR_SITE.demoteKinds, ['sutta'])
   assert.deepEqual(
     filterLibrary(INTERLINEAR_SITE, lib).map((t) => t.id),
-    ['a', 'b', 'c', 'e'],
+    ['c', 'e', 'a'],
   )
 })
 
 test('filterLibrary without a lens returns the library as-is', () => {
-  const site = { ...INTERLINEAR_SITE, kindCaps: undefined } as SiteConfig
+  const site = {
+    ...INTERLINEAR_SITE,
+    kindCaps: undefined,
+    demoteKinds: undefined,
+  } as SiteConfig
   assert.deepEqual(filterLibrary(site, lib), lib)
 })
