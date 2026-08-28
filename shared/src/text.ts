@@ -37,14 +37,16 @@ export function tokenizeChunk(pali: string): Token[] {
 }
 
 /**
- * Normalize a Pali surface form for use as a dictionary-cache key:
- * lowercase, strip punctuation (including daṇḍas and quotes) but keep
+ * Normalize a surface form for use as a dictionary-cache key: lowercase,
+ * strip punctuation (including daṇḍas, quotes, and CJK punctuation — but
+ * not the long-vowel mark ー, which is part of Japanese words) while keeping
  * diacritics (ā ī ū ṁ ṃ ṅ ñ ṭ ḍ ṇ ḷ) intact.
  */
 export function normalizeWord(word: string): string {
   return word
     .toLowerCase()
-    .replace(/[.,;:!?"'’‘“”()\[\]{}…—–\-।॥|/\\0-9]/g, '')
+    .replace(/[.,;:!?"'’‘“”„()\[\]{}…—–\-।॥|/\\0-9]/g, '')
+    .replace(/[。、！？：；，．・‥〜～「」『』（）〈〉《》【】〔〕]/g, '')
     .trim()
 }
 

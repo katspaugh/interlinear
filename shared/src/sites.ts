@@ -28,6 +28,10 @@ export interface SiteConfig {
   ogImage?: string
   /** Show only texts of this kind on the home page (undefined = all). */
   onlyKind?: string
+  /** Cap how many texts of a kind the home page shows (kinds not listed are
+   * uncapped). Lets interlinear.cc feature just a taste of the suttas while
+   * sutta.stream carries the full collection. */
+  kindCaps?: Record<string, number>
 }
 
 export const INTERLINEAR_SITE: SiteConfig = {
@@ -42,6 +46,7 @@ export const INTERLINEAR_SITE: SiteConfig = {
   themeColor: '#008acc',
   favicon: '/favicon.ico',
   ogImage: 'https://interlinear.cc/img/books.jpg',
+  kindCaps: { sutta: 2 },
 }
 
 export const SUTTA_SITE: SiteConfig = {
@@ -72,4 +77,27 @@ export function siteForHost(host: string | undefined): SiteConfig {
   if (!host) return DEFAULT_SITE
   const hostname = host.split(':')[0]!.toLowerCase().replace(/^www\./, '')
   return SITES.find((site) => site.domain === hostname) ?? DEFAULT_SITE
+}
+
+/**
+ * The site's lens on the shared library: `onlyKind` filters the library down
+ * to one kind, `kindCaps` limits how many of a kind appear (keeping library
+ * order, i.e. the earliest texts of that kind win).
+ */
+export function filterLibrary<T extends { kind: string }>(
+  site: SiteConfig,
+  texts: T[],
+): T[] {
+  const shown = site.onlyKind
+    ? texts.filter((text) => text.kind === site.onlyKind)
+    : texts
+  const caps = site.kindCaps
+  if (!caps) return shown
+  const seen: Record<string, number> = {}
+  return shown.filter((text) => {
+    const cap = caps[text.kind]
+    if (cap === undefined) return true
+    seen[text.kind] = (seen[text.kind] ?? 0) + 1
+    return seen[text.kind]! <= cap
+  })
 }

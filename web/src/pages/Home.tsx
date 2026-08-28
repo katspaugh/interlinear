@@ -1,5 +1,5 @@
 import { useProjection } from '@intenteffect/react'
-import { textLibrary, type TextSummary } from '@interlinear/shared'
+import { filterLibrary, textLibrary } from '@interlinear/shared'
 import { Logo } from '../App.js'
 import { AddTextForm } from '../components/AddTextForm.js'
 import { Spinner } from '../components/Spinner.js'
@@ -30,11 +30,6 @@ function Hero() {
   )
 }
 
-/** The site is a lens on the shared library: sutta.stream shows only suttas. */
-function visibleTexts(texts: TextSummary[]): TextSummary[] {
-  return site.onlyKind ? texts.filter((text) => text.kind === site.onlyKind) : texts
-}
-
 export function Home() {
   const texts = useProjection(textLibrary)
 
@@ -56,7 +51,7 @@ export function Home() {
       )}
       {texts.status === 'ready' && (
         <div className="home__cards">
-          {visibleTexts(texts.data).map((text) => (
+          {filterLibrary(site, texts.data).map((text) => (
             <TextCard key={text.id} text={text} />
           ))}
         </div>

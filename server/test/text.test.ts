@@ -30,6 +30,14 @@ test('normalizeWord lowercases and strips punctuation but keeps diacritics', () 
   assert.equal(normalizeWord('Sukhitattā.'), 'sukhitattā')
   assert.equal(normalizeWord('“cassa,”'), 'cassa')
   assert.equal(normalizeWord('sāsanaṃ॥'), 'sāsanaṃ')
+  assert.equal(normalizeWord('„Töpfchen,'), 'töpfchen')
+})
+
+test('normalizeWord strips CJK punctuation but keeps the long-vowel mark', () => {
+  assert.equal(normalizeWord('ございます。'), 'ございます')
+  assert.equal(normalizeWord('「いや、'), 'いや')
+  assert.equal(normalizeWord('可哀そうだ。」'), '可哀そうだ')
+  assert.equal(normalizeWord('コーヒー'), 'コーヒー')
 })
 
 test('slugify transliterates diacritics', () => {

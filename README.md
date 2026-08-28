@@ -42,9 +42,18 @@ The same deployment serves two brands from one database, picked by hostname
 (`shared/src/sites.ts`):
 
 - **[interlinear.cc](https://interlinear.cc)** — the generic site: any text,
-  any language. The original 2015 blue design.
+  any language. The original 2015 blue design. Shows a taste of the suttas
+  (capped at two) alongside the rest of the library — Grimm and Kafka in
+  German, Chekhov in Russian, Akutagawa in Japanese.
 - **[sutta.stream](https://sutta.stream)** — the same library filtered to
   suttas, in a warm, earthy skin aimed at Pali study.
+
+The seed library has two tiers (`server/src/seed-data.ts` and
+`seed-data-raw.ts`): the Pali suttas ship hand-glossed so the app works with
+no API key, while the fiction texts are seeded unglossed (public-domain
+Wikisource transcriptions) and glossed by the background worker on the first
+boot that has a gloss API key. Japanese seeds are pre-segmented with spaces
+(wakachigaki), since tokenization is whitespace-based.
 
 The client resolves its site from `location.hostname` (copy, theme class,
 library filter); the server rewrites `index.html`'s title, description,
