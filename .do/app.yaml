@@ -64,3 +64,9 @@ domains:
   - domain: www.interlinear.cc
     type: ALIAS
     zone: interlinear.cc
+  - domain: sutta.stream
+    type: ALIAS
+    zone: sutta.stream
+  - domain: www.sutta.stream
+    type: ALIAS
+    zone: sutta.stream
