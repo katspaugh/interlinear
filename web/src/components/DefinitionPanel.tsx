@@ -10,14 +10,11 @@ import {
 import { isKnown, toggleKnown, useWordKnowledge } from '../knownWords.js'
 import { Spinner } from './Spinner.js'
 
-function Entry(props: { definition: Definition; badge: string | null }) {
+function Entry(props: { definition: Definition }) {
   const { definition } = props
   return (
     <div className="definition__entry">
-      <h3 className="definition__title">
-        {definition.headword}
-        {props.badge && <span className="definition__badge">{props.badge}</span>}
-      </h3>
+      <h3 className="definition__title">{definition.headword}</h3>
       <p className="definition__grammar">{definition.grammar}</p>
       <ol className="definition__meanings">
         {definition.meanings.map((meaning, i) => (
@@ -57,12 +54,13 @@ function Entry(props: { definition: Definition; badge: string | null }) {
 }
 
 /**
- * The sidebar dictionary entry for the currently selected word — progressive:
- * for Pali, the near-instant Digital Pāḷi Dictionary entry appears first and
- * the generated entry replaces it when the LLM finishes. Both tiers are
- * cached per word, so each is fetched at most once and then shared by all
- * readers. (The server still supports a 'deep' tier; the UI doesn't request
- * it.)
+ * The sidebar dictionary entry for the currently selected word — progressive
+ * and complementary: for Pali, the near-instant Digital Pāḷi Dictionary
+ * entry appears first with the authoritative meanings and grammar, and when
+ * the LLM finishes, its complementary sections (morphemes, etymology,
+ * compound analysis) extend the same entry in place. Both tiers are cached
+ * per word, so each is fetched at most once and then shared by all readers.
+ * (The server still supports a 'deep' tier; the UI doesn't request it.)
  */
 export function DefinitionPanel(props: {
   lang: string
@@ -109,16 +107,36 @@ export function DefinitionPanel(props: {
   }, [props.lang, props.word])
 
   const fastState = entry.status === 'ready' ? entry.data : null
-  const fastReady = fastState?.status === 'ready'
-  const dpdReady = hasDpd && dpd.status === 'ready' && dpd.data.status === 'ready'
+  const fastEntry = fastState?.status === 'ready' ? fastState.definition : null
+  const dpdEntry =
+    hasDpd && dpd.status === 'ready' && dpd.data.status === 'ready'
+      ? dpd.data.definition
+      : null
 
-  // Progressive display: DPD's instant entry shows first, and the generated
-  // entry replaces it when it lands.
-  const showingDpd = !fastReady && dpdReady
-  const shown = fastReady ? fastState : showingDpd ? dpd.data : fastState
-  const loading = !shown || shown.status === 'none' || shown.status === 'pending'
+  // Progressive, complementary display: DPD's instant entry shows first with
+  // the authoritative basics, and the LLM's complementary sections extend it
+  // in place when they land. DPD keeps headword and meanings; grammar stays
+  // DPD's when it is a real inflection reading ("voc pl of bhikkhu"), else
+  // the LLM's fuller analysis wins over a bare pos label ("sandhi").
+  const merged: Definition | null =
+    dpdEntry && fastEntry
+      ? {
+          headword: dpdEntry.headword,
+          grammar: dpdEntry.grammar.includes(' of ')
+            ? dpdEntry.grammar
+            : fastEntry.grammar || dpdEntry.grammar,
+          meanings: dpdEntry.meanings,
+          analysis: fastEntry.analysis ?? dpdEntry.analysis,
+          etymology: fastEntry.etymology,
+          morphemes: fastEntry.morphemes,
+        }
+      : null
+  const shownEntry = merged ?? fastEntry ?? dpdEntry
+  const loading = !shownEntry && fastState?.status !== 'failed'
   const fastFailedBehindDpd =
-    showingDpd && (fastState?.status === 'failed' || Boolean(sendError))
+    Boolean(dpdEntry) &&
+    !fastEntry &&
+    (fastState?.status === 'failed' || Boolean(sendError))
 
   return (
     <div className="definition">
@@ -155,22 +173,20 @@ export function DefinitionPanel(props: {
             <p className="definition__error">⚠ {entry.error.message}</p>
           )}
 
-          {shown?.status === 'failed' && (
+          {!dpdEntry && fastState?.status === 'failed' && (
             <div className="definition__error">
-              <p>⚠ {shown.error}</p>
+              <p>⚠ {fastState.error}</p>
               <button className="btn btn_transparent-blue" onClick={() => void request('fast')}>
                 Try again
               </button>
             </div>
           )}
 
-          {shown?.status === 'ready' && shown.definition && (
-            <Entry definition={shown.definition} badge={showingDpd ? 'DPD' : null} />
-          )}
+          {shownEntry && <Entry definition={shownEntry} />}
 
-          {showingDpd && (
+          {dpdEntry && (
             <p className="definition__source">
-              From the{' '}
+              {merged ? 'Meanings from the ' : 'From the '}
               <a
                 href={`https://www.dpdict.net/?q=${encodeURIComponent(props.word)}`}
                 target="_blank"
@@ -178,10 +194,10 @@ export function DefinitionPanel(props: {
               >
                 Digital Pāḷi Dictionary
               </a>
-              .{' '}
+              {merged ? '; morphology and etymology by Claude.' : '.'}{' '}
               {fastFailedBehindDpd ? (
                 <>
-                  ⚠ The AI entry failed{' '}
+                  ⚠ The AI extension failed{' '}
                   <button
                     className="btn btn_transparent-blue"
                     onClick={() => void request('fast')}
@@ -190,7 +206,11 @@ export function DefinitionPanel(props: {
                   </button>
                 </>
               ) : (
-                <span className="definition__writing">Writing the AI entry…</span>
+                !merged && (
+                  <span className="definition__writing">
+                    Adding morphology and etymology…
+                  </span>
+                )
               )}
             </p>
           )}

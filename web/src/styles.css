@@ -980,18 +980,6 @@ a {
   color: var(--danger);
 }
 
-/* Badge marking the instant DPD-sourced entry. */
-.definition__badge {
-  font-size: 11px;
-  font-weight: normal;
-  color: var(--accent-strong);
-  border: 1px solid var(--highlight);
-  border-radius: 3px;
-  padding: 1px 6px;
-  margin-left: 8px;
-  vertical-align: middle;
-}
-
 /* Attribution + status line under a DPD-sourced entry. */
 .definition__source {
   font-size: 12px;

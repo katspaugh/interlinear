@@ -1,9 +1,11 @@
 import type pg from 'pg'
 import {
   announceText,
+  langHasDpd,
   markGlossFailed,
   saveChunkGloss,
   saveDefinition,
+  type Definition,
   type DefinitionTier,
 } from '@interlinear/shared'
 import { sendInternal, type App } from './app.js'
@@ -259,8 +261,28 @@ export class GlossWorker {
       })
       return
     }
+    // For Pali the panel shows the DPD entry's meanings as the base and only
+    // the LLM's complementary sections (morphemes, etymology, analysis). Wait
+    // for the DPD lookup — usually in flight in this same batch, so at most
+    // one ~1s tick — and hand its entry to the model as context, so it builds
+    // on the dictionary instead of re-deriving the meanings.
+    let dpdContext: Definition | null = null
+    if (tier === 'fast' && langHasDpd(lang)) {
+      const dpdRow = await this.pool.query<{
+        status: string
+        definition: Definition | null
+      }>(
+        `select status, definition from definitions
+         where lang = $1 and word = $2 and tier = 'dpd'`,
+        [lang, word],
+      )
+      const row = dpdRow.rows[0]
+      // Still looking up: leave this row pending; the next tick retries it.
+      if (row?.status === 'pending') return
+      dpdContext = row?.status === 'ready' ? row.definition : null
+    }
     try {
-      const definition = await defineWordLlm(lang, word, kind, tier)
+      const definition = await defineWordLlm(lang, word, kind, tier, dpdContext)
       await sendInternal(this.app, saveDefinition, {
         lang,
         word,

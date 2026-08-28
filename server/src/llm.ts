@@ -318,11 +318,26 @@ const definitionResultSchema = z.object({
     .nullable(),
 })
 
+/** The user-message context block for a word the Digital Pāḷi Dictionary
+ * already covers: the reader sees the DPD basics, so the model's job shifts
+ * to the complementary sections. Exported for tests. */
+export function dpdContextBlock(dpd: Definition): string {
+  return `
+
+The Digital Pāḷi Dictionary already shows the reader this entry for it:
+- headword: ${dpd.headword}
+- grammar: ${dpd.grammar}
+- meanings: ${dpd.meanings.join(' | ')}${dpd.analysis ? `\n- breakup: ${dpd.analysis}` : ''}
+
+Your entry extends that one rather than replacing it: only your morphemes, etymology, and analysis are shown to the reader, alongside the dictionary's meanings. Treat the dictionary's headword, grammar, and meanings as authoritative (still return your own, briefly — they are kept as a cross-check), and spend your effort on the morpheme breakdown, the etymology with cognates, and the compound/sandhi analysis.`
+}
+
 export async function defineWordLlm(
   lang: string,
   word: string,
   kind: string,
   tier: DefinitionTier,
+  dpd?: Definition | null,
 ): Promise<Definition> {
   // Haiku 4.5 rejects output_config.effort, so it is only set on the deep
   // tier ('medium' there keeps Sonnet fast; its depth comes from the prompt).
@@ -330,7 +345,12 @@ export async function defineWordLlm(
     model: tier === 'fast' ? FAST_DEFINITION_MODEL : DEEP_DEFINITION_MODEL,
     max_tokens: tier === 'fast' ? 2000 : 8000,
     system: definitionSystem(lang, kind, tier),
-    messages: [{ role: 'user', content: `${lang} word: ${word}` }],
+    messages: [
+      {
+        role: 'user',
+        content: `${lang} word: ${word}${dpd ? dpdContextBlock(dpd) : ''}`,
+      },
+    ],
     output_config:
       tier === 'fast'
         ? { format: zodOutputFormat(definitionResultSchema) }

@@ -6,6 +6,7 @@ import {
   parseGrammarReadings,
   parseSummaryEntries,
 } from '../src/dpd.js'
+import { dpdContextBlock } from '../src/llm.js'
 
 /* Trimmed captures of real dpdict.net /search_json responses. */
 
@@ -128,6 +129,29 @@ test('parseDpdResponse includes the deconstruction for sandhi words', () => {
   assert.equal(definition.grammar, 'sandhi')
   assert.deepEqual(definition.meanings, ['just like; as if; imagine if'])
   assert.equal(definition.analysis, 'se + yathā + api')
+})
+
+test('dpdContextBlock carries the DPD basics into the LLM prompt', () => {
+  const block = dpdContextBlock({
+    headword: 'bhikkhu',
+    grammar: 'masc voc pl of bhikkhu (noun)',
+    meanings: ['monks', 'monk; monastic'],
+    analysis: null,
+    etymology: null,
+  })
+  assert.match(block, /headword: bhikkhu/)
+  assert.match(block, /monks \| monk; monastic/)
+  assert.doesNotMatch(block, /breakup:/)
+  assert.match(
+    dpdContextBlock({
+      headword: 'seyyathāpi',
+      grammar: 'sandhi',
+      meanings: ['just like'],
+      analysis: 'se + yathā + api',
+      etymology: null,
+    }),
+    /breakup: se \+ yathā \+ api/,
+  )
 })
 
 test('parseDpdResponse returns null when DPD has no entry', () => {
