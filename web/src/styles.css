@@ -729,7 +729,11 @@ a {
 .word {
   display: inline-block;
   text-align: center;
-  vertical-align: bottom;
+  /* Align words by their text baseline (an inline-block's baseline is the
+   * baseline of its last line, i.e. the word text). Bottom-aligning boxes
+   * instead would raise words with morpheme underlines: the 3px of seam
+   * below the text lifts the text off the shared bottom edge. */
+  vertical-align: baseline;
   line-height: 1.2;
 }
 
