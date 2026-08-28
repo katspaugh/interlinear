@@ -1,8 +1,10 @@
 # Deploy to DigitalOcean App Platform.
 #
-# Triggers a new deployment of the existing app (the app pulls this repo's
-# main branch itself, per .do/app.yaml). Runs on every push to main, and can
-# be run manually from the Actions tab.
+# Applies .do/app.yaml (so spec changes in the repo reach the app — secrets
+# declared without values keep the values set in the DO console) and then
+# triggers a deployment (the app pulls this repo's main branch itself, per
+# .do/app.yaml). Runs on every push to main, and can be run manually from
+# the Actions tab.
 #
 # Requires one repository secret:
 #   DIGITALOCEAN_ACCESS_TOKEN — a DO API token with app deploy access
@@ -22,17 +24,22 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-      - name: Trigger App Platform deployment
+      - name: Apply app spec and deploy
         run: |
           APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | awk '$2 == "interlinear" { print $1 }')
           if [ -z "$APP_ID" ]; then
             echo "No App Platform app named 'interlinear' found" >&2
             exit 1
           fi
+          echo "Applying .do/app.yaml to app $APP_ID"
+          doctl apps update "$APP_ID" --spec .do/app.yaml --wait
           echo "Deploying app $APP_ID"
           doctl apps create-deployment "$APP_ID" --wait
