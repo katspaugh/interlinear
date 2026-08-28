@@ -3,6 +3,7 @@ import type pg from 'pg'
 import type { Word } from '@interlinear/shared'
 import { SEED_TEXTS, type SeedChunk, type SeedText } from './seed-data.js'
 import { FICTION_SEED_TEXTS } from './seed-data-fiction.js'
+import { MN_SEED_TEXTS } from './seed-data-mn.js'
 
 function chunkWords(chunk: SeedChunk): Word[] {
   return chunk.lines.flatMap((line, lineIdx) =>
@@ -22,23 +23,27 @@ function chunkOriginal(chunk: SeedChunk): string {
  * Runs at boot, before any client is connected, so it writes directly —
  * no events need to be emitted. */
 export async function seed(pool: pg.Pool): Promise<void> {
-  const all: SeedText[] = [...SEED_TEXTS, ...FICTION_SEED_TEXTS]
+  const all: SeedText[] = [...SEED_TEXTS, ...MN_SEED_TEXTS, ...FICTION_SEED_TEXTS]
   for (const text of all) {
-    const existing = await pool.query<{ id: string; status: string }>(
-      `select id, status from texts where slug = $1`,
+    const existing = await pool.query<{ id: string; status: string; chunks: number }>(
+      `select t.id, t.status,
+              (select count(*)::int from text_chunks c where c.text_id = t.id) as chunks
+       from texts t where t.slug = $1`,
       [text.slug],
     )
     const row = existing.rows[0]
     if (row) {
-      if (row.status === 'ready') continue
+      if (row.status === 'ready' && row.chunks === text.chunks.length) continue
       // An earlier deploy seeded this text without glosses (or its glossing
-      // failed); replace it with the pre-glossed version. Chunks cascade.
+      // failed), or the built-in content changed shape (e.g. an excerpt
+      // upgraded to the full text); replace it with the current pre-glossed
+      // version. Chunks cascade.
       const deleted = await pool.query(
         `delete from texts where id = $1 and builtin = true`,
         [row.id],
       )
       if (deleted.rowCount === 0) continue // a user's text owns the slug
-      console.log(`[seed] replacing unglossed "${text.title}" (${text.slug})`)
+      console.log(`[seed] replacing stale "${text.title}" (${text.slug})`)
     }
 
     const id = crypto.randomUUID()
