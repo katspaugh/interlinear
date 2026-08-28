@@ -1152,6 +1152,10 @@ a {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  /* min-width: 0 lets the column shrink below a long title word's width
+   * (Pali compounds); without breaking, that word would overflow across
+   * the status chip and reference to the right. */
+  overflow-wrap: break-word;
 }
 
 .library__orig {
@@ -1176,6 +1180,16 @@ a {
   font-size: 13px;
   font-style: italic;
   white-space: nowrap;
+}
+
+/* Phones: title + chips + reference don't fit side by side without
+ * crushing the title, so the meta line moves under the titles. */
+@media (max-width: 600px) {
+  .library__row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
 }
 
 .library__read,
