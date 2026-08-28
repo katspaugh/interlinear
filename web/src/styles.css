@@ -266,8 +266,103 @@ a {
   }
 }
 
+/* — Kusama in spirit, not stencil: one motif, repeated with devotion,
+ * in exactly one place — the home ground becomes a quiet infinity room
+ * that the dot-filled wordmark dissolves into (self-obliteration, which
+ * is also this site's subject). Two dot fields float over the dawn
+ * gradient (background-attachment: fixed, so they parallax against it):
+ * a far layer of big soft lantern dots with small umber ones, and a
+ * nearer parchment layer counter-drifting and slowly breathing. Drift
+ * distances are whole multiples of every tile so the loops are seamless,
+ * and the layers ride on transform/opacity only, so the animation stays
+ * on the compositor. Everything else stays plain — dots never decorate
+ * chrome or sit behind body text. */
+.theme-sutta .page_home {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.theme-sutta .page_home::before,
+.theme-sutta .page_home::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -240px;
+  pointer-events: none;
+}
+
+.theme-sutta .page_home::before {
+  background-image:
+    radial-gradient(circle, rgba(255, 210, 130, 0.13) 0, rgba(255, 210, 130, 0.13) 34px, transparent 52px),
+    radial-gradient(circle, rgba(56, 30, 9, 0.16) 3px, transparent 4px);
+  background-size:
+    240px 240px,
+    80px 80px;
+  animation: dream-drift-a 110s linear infinite;
+}
+
+.theme-sutta .page_home::after {
+  background-image: radial-gradient(circle, rgba(240, 220, 180, 0.16) 5px, transparent 6px);
+  background-size: 160px 160px;
+  background-position: 40px 70px;
+  animation:
+    dream-drift-b 70s linear infinite,
+    dream-twinkle 9s ease-in-out infinite;
+}
+
+@keyframes dream-drift-a {
+  to {
+    transform: translate(-240px, 240px);
+  }
+}
+
+@keyframes dream-drift-b {
+  to {
+    transform: translate(160px, 160px);
+  }
+}
+
+@keyframes dream-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* The wave ornament becomes a stream of dots, flowing downstream:
+ * zero-length dashes with round caps render as circles, and the offset
+ * animates by whole periods so the loop is seamless. */
+.theme-sutta .home__waves {
+  width: 120px;
+  opacity: 0.8;
+}
+
+.theme-sutta .home__waves path {
+  stroke-width: 3;
+  stroke-dasharray: 0 6;
+  animation: waves-flow 14s linear infinite;
+}
+
+@keyframes waves-flow {
+  to {
+    stroke-dashoffset: -60;
+  }
+}
+
+/* The loading spinner's bouncing dots join the palette */
+.theme-sutta .sk-three-bounce .sk-child {
+  background-color: var(--highlight);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .logo__stream {
+  .logo__stream,
+  .theme-sutta .page_home::before,
+  .theme-sutta .page_home::after,
+  .theme-sutta .home__waves path {
     animation: none;
   }
 }
