@@ -980,6 +980,36 @@ a {
   color: var(--danger);
 }
 
+/* Badge marking the instant DPD-sourced entry. */
+.definition__badge {
+  font-size: 11px;
+  font-weight: normal;
+  color: var(--accent-strong);
+  border: 1px solid var(--highlight);
+  border-radius: 3px;
+  padding: 1px 6px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* Attribution + status line under a DPD-sourced entry. */
+.definition__source {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 12px;
+}
+
+.definition__writing {
+  font-style: italic;
+  animation: definition-writing-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes definition-writing-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
 /* Loading animation (SpinKit three-bounce) */
 .sk-three-bounce {
   margin: 40px auto;

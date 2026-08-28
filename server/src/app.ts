@@ -9,6 +9,7 @@ import {
   announceText,
   defineWord,
   importTexts,
+  langHasDpd,
   markGlossFailed,
   normalizeWord,
   removeText,
@@ -278,14 +279,21 @@ export async function createApp(connectionString: string): Promise<InterlinearAp
       `select status from definitions where lang = $1 and word = $2 and tier = $3`,
       [lang, word, input.tier],
     )
+    if (input.tier === 'dpd' && !langHasDpd(lang)) {
+      return err(
+        intentEffectError('validation_failed', `no DPD dictionary for ${lang}`),
+      )
+    }
     const status = existing.rows[0]?.status
     // 'ready' and 'pending' need no new event: the projection snapshot (or the
     // already-emitted request event) covers the client. A failed lookup is retried.
     if (status === 'ready' || status === 'pending') return
-    if (!ctx.admin && !existing.rows[0]) {
+    // The daily cap protects the LLM bill; DPD lookups are free dictionary
+    // hits, so they neither consume nor count toward it.
+    if (!ctx.admin && !existing.rows[0] && input.tier !== 'dpd') {
       const recent = await tx.query<{ n: string }>(
         `select count(*) as n from definitions
-         where created_at > now() - interval '24 hours'`,
+         where created_at > now() - interval '24 hours' and tier <> 'dpd'`,
       )
       if (Number(recent.rows[0]!.n) >= DEFINITIONS_DAILY_CAP) {
         return err(

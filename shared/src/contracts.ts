@@ -61,9 +61,12 @@ export const textDetailSchema = z.object({
 })
 export type TextDetail = z.output<typeof textDetailSchema>
 
-/** Depth of a dictionary entry: 'fast' is the quick entry generated on tap,
- * 'deep' is the richer entry loaded on demand. Each is cached separately. */
-export const definitionTierSchema = z.enum(['fast', 'deep'])
+/** Source/depth of a dictionary entry: 'dpd' is an instant lookup in the
+ * Digital Pāḷi Dictionary (Pali only), 'fast' is the quick LLM entry
+ * generated on tap, 'deep' is the richer LLM entry loaded on demand. Each is
+ * cached separately, so a word shows its DPD entry the moment it arrives and
+ * upgrades in place when the LLM tiers land. */
+export const definitionTierSchema = z.enum(['dpd', 'fast', 'deep'])
 export type DefinitionTier = z.output<typeof definitionTierSchema>
 
 /** One morpheme of a dictionary entry's "built from" stack: the segment,

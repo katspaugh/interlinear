@@ -29,12 +29,12 @@ function Footer() {
         . Interlinear glossing and dictionary by{' '}
         <a href="https://www.anthropic.com/claude" target="_blank" rel="nofollow noreferrer">
           Claude
+        </a>{' '}
+        and the{' '}
+        <a href="https://www.dpdict.net" target="_blank" rel="noreferrer">
+          Digital Pāḷi Dictionary
         </a>
-        . A&nbsp;sibling of{' '}
-        <a href="https://interlinear.cc" target="_blank" rel="noreferrer">
-          interlinear.cc
-        </a>
-        , where any text in&nbsp;any language gets the same treatment.
+        .
       </p>
     )
   }

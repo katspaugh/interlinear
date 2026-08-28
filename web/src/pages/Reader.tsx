@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useProjection, useSend } from '@intenteffect/react'
 import {
   defineWord,
+  langHasDpd,
   normalizeWord,
   removeText,
   requestGloss,
@@ -104,12 +105,11 @@ export function Reader() {
   function prefetchWord(word: Word) {
     const normalized = normalizeWord(word.w)
     if (!normalized || detail.status !== 'ready' || !detail.data) return
-    void send(defineWord, {
-      lang: detail.data.text.lang,
-      word: normalized,
-      kind: detail.data.text.kind,
-      tier: 'fast',
-    })
+    const { lang, kind } = detail.data.text
+    if (langHasDpd(lang)) {
+      void send(defineWord, { lang, word: normalized, kind, tier: 'dpd' })
+    }
+    void send(defineWord, { lang, word: normalized, kind, tier: 'fast' })
   }
 
   // Fired on click: only now open the sidebar, so touch-scrolling over a

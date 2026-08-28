@@ -7,6 +7,7 @@ import {
   type DefinitionTier,
 } from '@interlinear/shared'
 import { sendInternal, type App } from './app.js'
+import { lookupDpd } from './dpd.js'
 import { expandUid, importSutta } from './import/importer.js'
 import {
   definitionsAvailable,
@@ -224,6 +225,30 @@ export class GlossWorker {
 
   private async processDefinition(row: PendingDefinition): Promise<void> {
     const { lang, word, tier, kind } = row
+    // The 'dpd' tier is a dictionary lookup, not an LLM call — no API key
+    // needed, and a missing entry is a normal outcome (the LLM tiers cover it).
+    if (tier === 'dpd') {
+      try {
+        const definition = await lookupDpd(word)
+        await sendInternal(this.app, saveDefinition, {
+          lang,
+          word,
+          tier,
+          definition,
+          error: definition ? null : 'not in the Digital Pāḷi Dictionary',
+        })
+      } catch (cause) {
+        console.error(`[worker] DPD lookup failed for "${word}":`, cause)
+        await sendInternal(this.app, saveDefinition, {
+          lang,
+          word,
+          tier,
+          definition: null,
+          error: cause instanceof Error ? cause.message : String(cause),
+        })
+      }
+      return
+    }
     if (!definitionsAvailable()) {
       await sendInternal(this.app, saveDefinition, {
         lang,
