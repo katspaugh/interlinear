@@ -771,6 +771,10 @@ a {
  * with a hairline gap at every seam. Rendered only when the reader's
  * "Morphemes" toggle is on (the spans are absent otherwise). */
 .word__morph {
+  /* Inline-block, not inline: an inline span's border-bottom paints outside
+   * the line box, over the next row's gloss. Inline-block folds the 3px of
+   * padding + border into the row height, keeping rows clear of each other. */
+  display: inline-block;
   border-bottom: 2px solid transparent;
   padding-bottom: 1px;
 }
