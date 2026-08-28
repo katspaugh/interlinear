@@ -27,12 +27,14 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * Brand the SPA shell for the site the request landed on: title, meta
- * description, favicon, and social-preview (Open Graph) tags — so a
- * sutta.stream link unfurls as sutta.stream, not as interlinear. When the
- * instance requires an owner passphrase, an admin-locked meta flag tells the
- * client to hide owner-only UI (the add form, delete buttons) from visitors
- * — cosmetic only; the server enforces the passphrase regardless.
+ * Brand the SPA shell for the site the request landed on: the theme class on
+ * <html> (so the site's palette applies before the JS bundle runs — no flash
+ * of the default blue), title, meta description, favicon, and social-preview
+ * (Open Graph) tags — so a sutta.stream link unfurls as sutta.stream, not as
+ * interlinear. When the instance requires an owner passphrase, an
+ * admin-locked meta flag tells the client to hide owner-only UI (the add
+ * form, delete buttons) from visitors — cosmetic only; the server enforces
+ * the passphrase regardless.
  */
 export function renderIndexHtml(
   html: string,
@@ -53,6 +55,11 @@ export function renderIndexHtml(
     `<meta name="theme-color" content="${escapeHtml(site.themeColor)}" />`,
   ].join('\n    ')
   return html
+    .replace(/<html([^>]*)>/, (_m, attrs: string) =>
+      site.themeClass
+        ? `<html${attrs} class="${escapeHtml(site.themeClass)}">`
+        : `<html${attrs}>`,
+    )
     .replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(site.title)}</title>`)
     .replace(
       /(<meta[^>]*name="description"[\s\S]*?content=")[^"]*(")/,
