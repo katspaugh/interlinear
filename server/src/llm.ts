@@ -20,9 +20,18 @@ import {
 /* Definitions always use the Anthropic API (they are cheap already).  */
 /* ------------------------------------------------------------------ */
 
+/* Setting DEEPSEEK_API_KEY alone (the recommended bulk setup) routes
+ * glossing to DeepSeek's Anthropic-compatible endpoint; GLOSS_BASE_URL /
+ * GLOSS_API_KEY / GLOSS_MODEL still override any part of it. */
+const DEEPSEEK_BASE_URL = 'https://api.deepseek.com/anthropic'
+const DEEPSEEK_MODEL = 'deepseek-v4-pro'
+const useDeepSeek = !process.env.GLOSS_BASE_URL && Boolean(process.env.DEEPSEEK_API_KEY)
+
 const GLOSS_MODEL =
-  process.env.GLOSS_MODEL ?? process.env.ANTHROPIC_MODEL ?? 'claude-opus-5'
-const GLOSS_BASE_URL = process.env.GLOSS_BASE_URL
+  process.env.GLOSS_MODEL ??
+  (useDeepSeek ? DEEPSEEK_MODEL : (process.env.ANTHROPIC_MODEL ?? 'claude-opus-5'))
+const GLOSS_BASE_URL =
+  process.env.GLOSS_BASE_URL ?? (useDeepSeek ? DEEPSEEK_BASE_URL : undefined)
 /** Quick entry shown on tap — small fast model, no extended reasoning. */
 const FAST_DEFINITION_MODEL =
   process.env.DEFINITION_MODEL_FAST ?? 'claude-haiku-4-5'
@@ -30,7 +39,11 @@ const FAST_DEFINITION_MODEL =
 const DEEP_DEFINITION_MODEL = process.env.DEFINITION_MODEL_DEEP ?? 'claude-sonnet-5'
 
 export function glossAvailable(): boolean {
-  return Boolean(process.env.GLOSS_API_KEY ?? process.env.ANTHROPIC_API_KEY)
+  return Boolean(
+    process.env.GLOSS_API_KEY ??
+      process.env.DEEPSEEK_API_KEY ??
+      process.env.ANTHROPIC_API_KEY,
+  )
 }
 
 export function definitionsAvailable(): boolean {
@@ -48,7 +61,10 @@ function getGlossClient(): Anthropic {
   if (!GLOSS_BASE_URL) return getAnthropicClient()
   glossClient ??= new Anthropic({
     baseURL: GLOSS_BASE_URL,
-    apiKey: process.env.GLOSS_API_KEY ?? process.env.ANTHROPIC_API_KEY,
+    apiKey:
+      process.env.GLOSS_API_KEY ??
+      process.env.DEEPSEEK_API_KEY ??
+      process.env.ANTHROPIC_API_KEY,
   })
   return glossClient
 }
@@ -151,6 +167,9 @@ export interface GlossContext {
   source: string | null
   lang: string
   kind: string
+  /** Existing human translation of the passage (e.g. an imported sutta's),
+   * given to the model as reference — it sharply improves gloss accuracy. */
+  translation?: string | null
 }
 
 /** Gloss one chunk of text. Tokenization is done locally so the gloss
@@ -163,12 +182,20 @@ export async function glossChunk(
   if (tokens.length === 0) return { words: [], translation: '' }
 
   const tokenList = tokens.map((t, i) => `${i + 1}. ${t.w}`).join('\n')
+  const reference = context.translation?.trim()
   const prompt = `Text: ${context.title}${context.source ? ` (${context.source})` : ''}
 Language: ${context.lang}
 
 Passage:
 ${original}
-
+${
+  reference
+    ? `
+Published reference translation (keep your glosses consistent with it; you may reuse it as the translation):
+${reference}
+`
+    : ''
+}
 Tokens to gloss (${tokens.length} total):
 ${tokenList}`
 
@@ -205,7 +232,7 @@ function definitionSystem(lang: string, kind: string, tier: DefinitionTier): str
 - grammar: part of speech and full grammatical analysis of the surface form (e.g. "3rd person singular optative of bhavati")
 - meanings: the principal English meanings, most relevant first
 - analysis: for compounds, contractions, and sandhi forms, the breakdown into parts with the meaning of each part; null for simple words
-- etymology: the root and derivation, with cognates if illuminating; null otherwise
+- etymology: the root and derivation, with cognates in languages the learner is likely to know (English, Latin, Greek, related modern languages) where they genuinely illuminate; when a prefix shapes the word, show how its concrete spatial sense became the abstract meaning; null otherwise
 
 If the word looks misspelled or is not attested, resolve it to the closest attested form and note that in the grammar field.
 

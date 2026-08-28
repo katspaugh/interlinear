@@ -10,6 +10,7 @@ import {
   markGlossFailed,
   normalizeWord,
   removeText,
+  requestGloss,
   saveChunkGloss,
   saveDefinition,
   slugify,
@@ -18,6 +19,7 @@ import {
   textChunkGlossed,
   textDetail,
   textGlossFailed,
+  textGlossQueued,
   textLibrary,
   textRemoved,
   wordDefined,
@@ -46,6 +48,11 @@ const ADMIN_INTENTS: ReadonlySet<string> = new Set([addText.type, removeText.typ
  * asked to come back later — a lid on the LLM bill, not a rate limiter. */
 const DEFINITIONS_DAILY_CAP = Number(process.env.DEFINITIONS_DAILY_CAP ?? 300)
 
+/** How many texts may sit in 'glossing' at once. Bounds how much LLM work
+ * readers can queue via text.requestGloss — the worker drains one chunk at a
+ * time, so this caps the backlog, not the spend rate. */
+const GLOSS_QUEUE_CAP = Number(process.env.GLOSS_QUEUE_CAP ?? 10)
+
 export type App = IntentEffectServer<Ctx, pg.PoolClient>
 
 export interface InterlinearApp {
@@ -63,6 +70,7 @@ interface TextRow {
   kind: string
   status: string
   builtin: boolean
+  translator: string | null
   created_at: Date
   chunk_count: string | number
   glossed_count: string | number
@@ -80,6 +88,7 @@ function toSummary(row: TextRow): TextSummary {
     kind: row.kind,
     status: row.status as TextStatus,
     builtin: row.builtin,
+    translator: row.translator,
     chunkCount: Number(row.chunk_count),
     glossedCount: Number(row.glossed_count),
     createdAt: row.created_at.toISOString(),
@@ -89,7 +98,7 @@ function toSummary(row: TextRow): TextSummary {
 
 const SUMMARY_SQL = `
   select t.id, t.slug, t.title, t.orig_title, t.source, t.lang, t.kind,
-         t.status, t.builtin, t.created_at,
+         t.status, t.builtin, t.translator, t.created_at,
          count(c.idx) as chunk_count,
          count(c.words) as glossed_count,
          (select c0.words from text_chunks c0
@@ -163,7 +172,7 @@ export async function createApp(connectionString: string): Promise<InterlinearAp
     const inserted = await tx.query<TextRow>(
       `insert into texts (id, slug, title, orig_title, source, lang, kind, status)
        values ($1, $2, $3, $4, $5, $6, $7, 'glossing')
-       returning id, slug, title, orig_title, source, lang, kind, status, builtin, created_at`,
+       returning id, slug, title, orig_title, source, lang, kind, status, builtin, translator, created_at`,
       [
         id,
         slug,
@@ -198,6 +207,32 @@ export async function createApp(connectionString: string): Promise<InterlinearAp
       )
     }
     emit(textRemoved, { id: input.id })
+  })
+
+  app.handle(requestGloss, async ({ input, tx, emit }) => {
+    const found = await tx.query<{ status: string }>(
+      `select status from texts where id = $1`,
+      [input.id],
+    )
+    if (!found.rows[0]) {
+      return err(intentEffectError('not_found', 'text not found'))
+    }
+    // Only imported texts wait in 'unglossed'; any other status means the
+    // work is already queued, done, or failed — nothing to do.
+    if (found.rows[0].status !== 'unglossed') return
+    const queued = await tx.query<{ n: string }>(
+      `select count(*) as n from texts where status = 'glossing'`,
+    )
+    if (Number(queued.rows[0]!.n) >= GLOSS_QUEUE_CAP) {
+      return err(
+        intentEffectError(
+          'handler_failed',
+          'many texts are being glossed right now — please try again in a while',
+        ),
+      )
+    }
+    await tx.query(`update texts set status = 'glossing' where id = $1`, [input.id])
+    emit(textGlossQueued, { textId: input.id })
   })
 
   app.handle(defineWord, async ({ input, ctx, tx, emit }) => {
@@ -240,14 +275,21 @@ export async function createApp(connectionString: string): Promise<InterlinearAp
   /* Internal intents — reachable only with ctx.internal (the gloss worker). */
 
   app.handle(saveChunkGloss, async ({ input, tx, emit }) => {
-    const updated = await tx.query(
-      `update text_chunks set words = $3, translation = $4
-       where text_id = $1 and idx = $2`,
-      [input.textId, input.idx, JSON.stringify(input.words), input.translation],
+    // Imported chunks already carry a human translation (e.g. Bhikkhu
+    // Sujato's) — keep it; the LLM's translation only fills a blank.
+    const existing = await tx.query<{ translation: string | null }>(
+      `select translation from text_chunks where text_id = $1 and idx = $2`,
+      [input.textId, input.idx],
     )
-    if (updated.rowCount === 0) {
+    if (existing.rows.length === 0) {
       return err(intentEffectError('not_found', 'chunk not found'))
     }
+    const translation = existing.rows[0]!.translation?.trim() || input.translation
+    await tx.query(
+      `update text_chunks set words = $3, translation = $4
+       where text_id = $1 and idx = $2`,
+      [input.textId, input.idx, JSON.stringify(input.words), translation],
+    )
     const counts = await tx.query<{ chunk_count: string; glossed_count: string }>(
       `select count(idx) as chunk_count, count(words) as glossed_count
        from text_chunks where text_id = $1`,
@@ -263,7 +305,7 @@ export async function createApp(connectionString: string): Promise<InterlinearAp
       textId: input.textId,
       idx: input.idx,
       words: input.words,
-      translation: input.translation,
+      translation,
       glossedCount,
       status,
     })

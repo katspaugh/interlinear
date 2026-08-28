@@ -21,7 +21,7 @@ export const TEXT_KINDS: TextKindPreset[] = [
     glossHint:
       'This is Buddhist scripture. Use established doctrinal renderings; well-known untranslatable terms (dhamma, kamma, nibbāna, jhāna) may be kept with a one-word hint. Respect formulaic repetition — repeat glosses verbatim for repeated formulas. The translation should be clear, measured, and faithful to the doctrinal content.',
     definitionHint:
-      'Emphasize the word’s doctrinal usage in the canon (with the tradition’s established English renderings) in the style of the PTS dictionary.',
+      'Emphasize the word’s doctrinal usage in the canon (with the tradition’s established English renderings) in the style of the PTS dictionary. Pali opens up through morphology: relate roots to their Sanskrit forms and Indo-European cognates, and show how spatial prefixes (upa-, sam-, abhi-, paṭi-, vi-, ni-) keep their concrete imagery inside abstract doctrinal terms — e.g. samādhi as saṁ + ā + √dhā, "placing together", hence collectedness.',
   },
   {
     id: 'poetry',

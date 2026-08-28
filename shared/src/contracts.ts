@@ -13,7 +13,10 @@ export const wordSchema = z.object({
 })
 export type Word = z.output<typeof wordSchema>
 
-export const textStatusSchema = z.enum(['glossing', 'ready', 'failed'])
+/** 'unglossed' marks imported texts (original + translation, no word glosses
+ * yet) that wait for a reader: the gloss worker ignores them until a
+ * `text.requestGloss` intent moves them to 'glossing'. */
+export const textStatusSchema = z.enum(['unglossed', 'glossing', 'ready', 'failed'])
 export type TextStatus = z.output<typeof textStatusSchema>
 
 export const textSummarySchema = z.object({
@@ -29,6 +32,9 @@ export const textSummarySchema = z.object({
   kind: z.string(),
   status: textStatusSchema,
   builtin: z.boolean(),
+  /** Credit line for an imported human translation (e.g. "Bhikkhu Sujato,
+   * SuttaCentral"); null for user texts and LLM-only translations. */
+  translator: z.string().nullable(),
   chunkCount: z.number().int(),
   glossedCount: z.number().int(),
   createdAt: z.string(),
@@ -100,6 +106,12 @@ export const textGlossFailed = event(
 
 export const textRemoved = event('text.removed', z.object({ id: z.uuid() }))
 
+/** An unglossed (imported) text was queued for glossing by a reader. */
+export const textGlossQueued = event(
+  'text.glossQueued',
+  z.object({ textId: z.uuid() }),
+)
+
 export const wordDefinitionRequested = event(
   'word.definitionRequested',
   z.object({ lang: z.string(), word: z.string(), tier: definitionTierSchema }),
@@ -145,6 +157,16 @@ export const addText = intent(
 export const removeText = intent('text.remove', z.object({ id: z.uuid() }), {
   emits: [textRemoved],
 })
+
+/** Ask for an imported, not-yet-glossed text to be glossed. Sent by the
+ * reader when someone opens an 'unglossed' text — glossing is demand-driven,
+ * so the community's reading decides what gets glossed first. Open to
+ * everyone (not admin-gated); a no-op for texts in any other status. */
+export const requestGloss = intent(
+  'text.requestGloss',
+  z.object({ id: z.uuid() }),
+  { emits: [textGlossQueued] },
+)
 
 export const defineWord = intent(
   'word.define',
@@ -226,6 +248,11 @@ export const textLibrary = projection({
   .on(textGlossFailed, (texts, data) =>
     texts.map((t) => (t.id === data.textId ? { ...t, status: 'failed' as const } : t)),
   )
+  .on(textGlossQueued, (texts, data) =>
+    texts.map((t) =>
+      t.id === data.textId ? { ...t, status: 'glossing' as const } : t,
+    ),
+  )
   .on(textRemoved, (texts, data) => texts.filter((t) => t.id !== data.id))
 
 /** One text with all its chunks — powers the reader. Null when not found. */
@@ -248,6 +275,10 @@ export const textDetail = projection({
   .on(textGlossFailed, (detail, data) => {
     if (!detail || detail.text.id !== data.textId) return detail
     return { ...detail, text: { ...detail.text, status: 'failed' as const } }
+  })
+  .on(textGlossQueued, (detail, data) => {
+    if (!detail || detail.text.id !== data.textId) return detail
+    return { ...detail, text: { ...detail.text, status: 'glossing' as const } }
   })
   .on(textRemoved, (detail, data) =>
     detail && detail.text.id === data.id ? null : detail,

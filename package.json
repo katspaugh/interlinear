@@ -12,6 +12,7 @@
     "dev:web": "pnpm --filter @interlinear/web dev",
     "build": "pnpm --filter @interlinear/web build",
     "start": "pnpm --filter @interlinear/server start",
+    "import:suttas": "pnpm --filter @interlinear/server run import-suttas",
     "typecheck": "tsc --noEmit",
     "test": "pnpm --filter @interlinear/server test"
   },

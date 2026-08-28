@@ -30,6 +30,7 @@ interface PendingChunk {
   text_id: string
   idx: number
   original: string
+  translation: string | null
   title: string
   source: string | null
   lang: string
@@ -98,7 +99,7 @@ export class GlossWorker {
 
   private async processChunk(): Promise<boolean> {
     const pending = await this.pool.query<PendingChunk>(
-      `select c.text_id, c.idx, c.original, t.title, t.source, t.lang, t.kind
+      `select c.text_id, c.idx, c.original, c.translation, t.title, t.source, t.lang, t.kind
        from text_chunks c
        join texts t on t.id = c.text_id
        where t.status = 'glossing' and c.words is null
@@ -122,6 +123,7 @@ export class GlossWorker {
         source: chunk.source,
         lang: chunk.lang,
         kind: chunk.kind,
+        translation: chunk.translation,
       })
       await sendInternal(this.app, saveChunkGloss, {
         textId: chunk.text_id,

@@ -40,17 +40,13 @@ services:
       - key: ADMIN_TOKEN
         type: SECRET
         scope: RUN_TIME
-      - key: GLOSS_MODEL
-        value: claude-opus-5
+      # Routes glossing to DeepSeek's Anthropic-compatible endpoint
+      # (deepseek-v4-pro) — cheap enough for reader-driven glossing of the
+      # whole canon. Definitions still use the Anthropic API. To use another
+      # provider instead, set GLOSS_BASE_URL + GLOSS_MODEL + GLOSS_API_KEY.
+      - key: DEEPSEEK_API_KEY
+        type: SECRET
         scope: RUN_TIME
-      # For cheap bulk glossing, set these to an Anthropic-compatible
-      # endpoint (e.g. DeepSeek) and its model + key:
-      # - key: GLOSS_BASE_URL
-      #   value: https://api.deepseek.com/anthropic
-      # - key: GLOSS_MODEL
-      #   value: <the provider's model id>
-      # - key: GLOSS_API_KEY
-      #   type: SECRET
 
 databases:
   - name: db

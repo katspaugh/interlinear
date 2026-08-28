@@ -26,8 +26,12 @@ export async function migrateAppTables(pool: pg.Pool): Promise<void> {
       kind text not null default 'prose',
       status text not null default 'glossing',
       builtin boolean not null default false,
+      translator text,
       created_at timestamptz not null default now()
     );
+
+    -- Upgrade databases created before imported texts carried a credit line.
+    alter table texts add column if not exists translator text;
 
     create table if not exists text_chunks (
       text_id uuid not null references texts(id) on delete cascade,

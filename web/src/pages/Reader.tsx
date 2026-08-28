@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useProjection, useSend } from '@intenteffect/react'
 import {
   defineWord,
   normalizeWord,
   removeText,
+  requestGloss,
   textDetail,
   type Word,
 } from '@interlinear/shared'
@@ -28,6 +29,22 @@ export function Reader() {
   const [showTranslation, setShowTranslation] = useState(false)
   const [selected, setSelected] = useState<SelectedWord | null>(null)
   useReadMarks()
+
+  // Imported texts wait unglossed until somebody reads them: opening one
+  // queues it for the gloss worker, and the stanzas fill in live. If the
+  // queue is full the request fails quietly — the text is still readable,
+  // and the next reader retries.
+  // The ref remembers which text was requested: navigating to another
+  // unglossed text (same mounted component) must request again.
+  const glossRequested = useRef<string | null>(null)
+  const textId = detail.status === 'ready' ? detail.data?.text.id : undefined
+  const textStatus = detail.status === 'ready' ? detail.data?.text.status : undefined
+  useEffect(() => {
+    if (!textId || textStatus !== 'unglossed' || glossRequested.current === textId)
+      return
+    glossRequested.current = textId
+    void send(requestGloss, { id: textId })
+  }, [textId, textStatus, send])
 
   if (detail.status === 'loading') return <Spinner />
   if (detail.status === 'error') {
@@ -126,8 +143,19 @@ export function Reader() {
           <small className="reader__subtitle">
             {text.origTitle ? text.title : text.lang}
           </small>
+          {text.translator && (
+            <small className="reader__credit">
+              Translation: {text.translator}
+            </small>
+          )}
         </div>
 
+        {text.status === 'unglossed' && (
+          <p className="reader__glossing">
+            This text has no word-by-word glosses yet — reading it queues them
+            up. They will appear here as they are generated.
+          </p>
+        )}
         {text.status === 'glossing' && (
           <p className="reader__glossing">
             Glossing {text.glossedCount}/{text.chunkCount} — new stanzas appear as
@@ -153,7 +181,7 @@ export function Reader() {
             ) : (
               <div className="reader__raw">{chunk.original}</div>
             )}
-            {showTranslation && chunk.translation && (
+            {(showTranslation || !chunk.words) && chunk.translation && (
               <p className="reader__translation">{chunk.translation}</p>
             )}
           </div>

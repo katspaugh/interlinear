@@ -50,7 +50,9 @@ The same deployment serves two brands from one database, picked by hostname
 
 The whole seed library (`server/src/seed-data.ts` for the suttas,
 `seed-data-fiction.ts` for the fiction shelf) ships pre-glossed, so no
-gloss API is needed to serve it. The fiction originals are public-domain
+gloss API is needed to serve it. Beyond the seeds, whole collections of the
+Pali canon are imported from SuttaCentral (see below) and glossed lazily,
+the first time somebody reads them. The fiction originals are public-domain
 Wikisource transcriptions, verified character-for-character; Japanese seeds
 are pre-segmented with spaces (wakachigaki), since tokenization is
 whitespace-based.
@@ -60,6 +62,34 @@ library filter); the server rewrites `index.html`'s title, description,
 favicon, and Open Graph tags per `Host` header (`server/src/static.ts`), so
 links unfurl with the right branding. Because the database is shared, every
 gloss and dictionary entry generated on one site serves the other.
+
+## Importing the canon
+
+`pnpm import:suttas` pulls suttas from [SuttaCentral](https://suttacentral.net)'s
+Bilara corpus: the segmented Mahāsaṅgīti Pali root with Bhikkhu Sujato's
+aligned English translation, both dedicated to the public domain. Pass
+collection uids (expanded to every sutta they contain) or individual ones:
+
+```sh
+pnpm import:suttas kp dhp snp     # whole collections
+pnpm import:suttas mn1 sn56.11    # single suttas
+pnpm import:suttas --dry-run mn   # see what would be imported
+```
+
+Imported texts are stored with SuttaCentral uids as slugs (`/text/mn1`),
+chunked by paragraph or verse, and are readable immediately — Pali plus
+translation — with status `unglossed`. **Glossing is demand-driven**: the
+first time a reader opens an unglossed sutta, the reader sends a
+`text.requestGloss` intent, the background worker glosses it chunk by chunk
+(the stanzas fill in live over SSE), and the result is cached for every
+future reader. The existing human translation is kept — the glosser
+receives it as reference context, which noticeably improves gloss accuracy —
+and `GLOSS_QUEUE_CAP` bounds how many texts can queue at once.
+
+On sutta.stream the library renders as a searchable index grouped by
+collection (search ignores case and diacritics, so "metta" finds
+Mettāsutta); interlinear.cc keeps its card grid and still caps the suttas
+at a taste of two.
 
 ## Development
 
@@ -91,15 +121,18 @@ pnpm start               # production mode: server serves web/dist on :3001
 | `DATABASE_SSL`      | —                                                | `no-verify` for DO managed PG    |
 | `ADMIN_TOKEN`       | — (open when unset)                              | Owner passphrase for add/remove  |
 | `DEFINITIONS_DAILY_CAP` | `300`                                        | New dictionary entries per 24h   |
-| `GLOSS_MODEL`       | `claude-opus-5`                                  | Model used for glossing          |
+| `DEEPSEEK_API_KEY`  | —                                                | Routes glossing to DeepSeek      |
+| `GLOSS_MODEL`       | `claude-opus-5` / `deepseek-v4-pro`              | Model used for glossing          |
 | `GLOSS_BASE_URL`    | — (Anthropic API)                                | Anthropic-compatible endpoint    |
-| `GLOSS_API_KEY`     | falls back to `ANTHROPIC_API_KEY`                | Key for the gloss endpoint       |
+| `GLOSS_API_KEY`     | falls back to `DEEPSEEK_API_KEY`, `ANTHROPIC_API_KEY` | Key for the gloss endpoint  |
+| `GLOSS_QUEUE_CAP`   | `10`                                             | Texts queued for glossing at once |
 | `DEFINITION_MODEL_FAST` | `claude-haiku-4-5`                           | Quick dictionary entries         |
 | `DEFINITION_MODEL_DEEP` | `claude-sonnet-5`                            | Detailed dictionary entries      |
 
-To make bulk glossing cheap, point `GLOSS_BASE_URL` at any
-Anthropic-compatible endpoint (e.g. DeepSeek's) with its `GLOSS_API_KEY` and
-`GLOSS_MODEL`. With a custom base URL the server stops using
+To make bulk glossing cheap, set `DEEPSEEK_API_KEY`: glossing then runs on
+DeepSeek's Anthropic-compatible endpoint with `deepseek-v4-pro`. Any other
+Anthropic-compatible provider works via `GLOSS_BASE_URL` + `GLOSS_MODEL` +
+`GLOSS_API_KEY`. With a custom base URL the server stops using
 Anthropic-specific structured outputs and instead asks for plain JSON,
 validated locally. Definitions always use the Anthropic API.
 

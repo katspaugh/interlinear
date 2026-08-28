@@ -36,6 +36,9 @@ export interface SiteConfig {
   kindCaps?: Record<string, number>
   /** Kinds pushed to the end of the home listing (order otherwise stable). */
   demoteKinds?: string[]
+  /** Render the library as an index grouped by collection instead of the
+   * flat card grid — for sites carrying hundreds of texts. */
+  groupedLibrary?: boolean
 }
 
 export const INTERLINEAR_SITE: SiteConfig = {
@@ -70,6 +73,7 @@ export const SUTTA_SITE: SiteConfig = {
   favicon: '/favicon-sutta.svg',
   searchPlaceholder: 'Search by collection, number, or title…',
   onlyKind: 'sutta',
+  groupedLibrary: true,
 }
 
 export const SITES: SiteConfig[] = [INTERLINEAR_SITE, SUTTA_SITE]

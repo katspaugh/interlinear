@@ -875,3 +875,112 @@ a {
     max-height: none;
   }
 }
+
+/* Grouped library index (sutta.stream): search + collections + rows */
+.library {
+  max-width: 720px;
+  margin: 0 auto 50px;
+}
+
+.library__collection {
+  font-size: 15px;
+  font-weight: normal;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 28px 0 8px;
+  opacity: 0.85;
+}
+
+.library__rows {
+  background: var(--paper);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.library__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 15px;
+  text-decoration: none;
+  color: var(--ink);
+  border-bottom: 1px solid var(--gloss-3);
+}
+
+.library__row:last-child {
+  border-bottom: none;
+}
+
+.library__row:hover {
+  background: var(--highlight);
+}
+
+.library__titles {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.library__orig {
+  font-family: var(--font-reading);
+  font-size: 17px;
+}
+
+.library__en {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.library__meta {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.library__ref {
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.library__read,
+.library__status {
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-radius: 3px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+
+.library__read {
+  background: var(--accent-strong);
+  color: #fff;
+}
+
+.library__status {
+  border: 1px solid var(--gloss-1);
+  color: var(--muted);
+}
+
+.library__status_ready {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.library__status_failed {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* Human-translation credit under the reader heading */
+.reader__credit {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}

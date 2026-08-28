@@ -5,6 +5,7 @@ import { filterLibrary, searchLibrary, textLibrary, type Word } from '@interline
 import { adminUiVisible } from '../admin.js'
 import { Logo } from '../App.js'
 import { AddTextForm } from '../components/AddTextForm.js'
+import { Library } from '../components/Library.js'
 import { Spinner } from '../components/Spinner.js'
 import { TextCard } from '../components/TextCard.js'
 import { Words } from '../components/Words.js'
@@ -127,6 +128,8 @@ export function Home() {
           </div>
           {shown.length === 0 && searching ? (
             <p className="home__empty">Nothing matches “{query.trim()}”.</p>
+          ) : site.groupedLibrary ? (
+            <Library texts={shown} />
           ) : (
             <div className="home__cards">
               {shown.map((text) => (
