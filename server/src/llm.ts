@@ -61,13 +61,17 @@ function getAnthropicClient(): Anthropic {
 
 let glossClient: Anthropic | null = null
 function getGlossClient(): Anthropic {
-  if (!GLOSS_BASE_URL) return getAnthropicClient()
+  // A dedicated client with a hard per-request timeout: glossing runs in the
+  // background worker, where one hung request (the SDK default allows 10
+  // minutes, retried) would silently stall the whole queue.
   glossClient ??= new Anthropic({
     baseURL: GLOSS_BASE_URL,
     apiKey:
       process.env.GLOSS_API_KEY ??
       process.env.DEEPSEEK_API_KEY ??
       process.env.ANTHROPIC_API_KEY,
+    timeout: 180_000,
+    maxRetries: 1,
   })
   return glossClient
 }

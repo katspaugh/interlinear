@@ -16,7 +16,11 @@ import {
 } from './llm.js'
 
 const POLL_MS = 2_000
-const MAX_CHUNK_FAILURES = 2
+/** Failures before a text is marked 'failed' — parallel chunks can fail in
+ * bursts, and a reader re-opening the text re-queues it anyway. */
+const MAX_CHUNK_FAILURES = 4
+/** Chunks glossed in parallel per tick. */
+const GLOSS_CONCURRENCY = Number(process.env.GLOSS_CONCURRENCY ?? 3)
 
 const NO_KEY_ERROR =
   'Glossing is not available: the server has no ANTHROPIC_API_KEY configured.'
@@ -89,7 +93,7 @@ export class GlossWorker {
       // streams in parallel. Imports are chunked to one sutta per tick, so
       // a queued collection never starves the others.
       const [chunkWork, defWork, importWork] = await Promise.all([
-        this.processChunk(),
+        this.processChunks(),
         this.processDefinitions(),
         this.processImports(),
       ])
@@ -102,27 +106,32 @@ export class GlossWorker {
     }
   }
 
-  private async processChunk(): Promise<boolean> {
+  private async processChunks(): Promise<boolean> {
     const pending = await this.pool.query<PendingChunk>(
       `select c.text_id, c.idx, c.original, c.translation, t.title, t.source, t.lang, t.kind
        from text_chunks c
        join texts t on t.id = c.text_id
        where t.status = 'glossing' and c.words is null
        order by t.created_at asc, c.idx asc
-       limit 1`,
+       limit ${GLOSS_CONCURRENCY}`,
     )
-    const chunk = pending.rows[0]
-    if (!chunk) return false
+    if (pending.rows.length === 0) return false
 
     if (!glossAvailable()) {
       await sendInternal(this.app, markGlossFailed, {
-        textId: chunk.text_id,
+        textId: pending.rows[0]!.text_id,
         error: NO_KEY_ERROR,
       })
       return true
     }
 
+    await Promise.all(pending.rows.map((chunk) => this.processChunk(chunk)))
+    return true
+  }
+
+  private async processChunk(chunk: PendingChunk): Promise<void> {
     try {
+      console.log(`[worker] glossing "${chunk.title}" chunk ${chunk.idx}`)
       const gloss = await glossChunk(chunk.original, {
         title: chunk.title,
         source: chunk.source,
@@ -149,7 +158,6 @@ export class GlossWorker {
         })
       }
     }
-    return true
   }
 
   /** Work the text.import queue: expand a collection uid into per-sutta
