@@ -28,3 +28,22 @@ export function adminHeaders(): HeadersInit {
   const token = getAdminToken()
   return token ? { 'x-admin-token': token } : {}
 }
+
+/** True when the server requires an owner passphrase. The flag is injected
+ * into index.html by the server (see server/src/static.ts); in dev, where
+ * Vite serves the shell, it is absent and the instance behaves as open. */
+export function isAdminLocked(): boolean {
+  try {
+    return document.querySelector('meta[name="admin-locked"]') !== null
+  } catch {
+    return false
+  }
+}
+
+/** Whether to render owner-only UI (the add form, delete buttons). Open
+ * instances show it to everyone; locked instances only when a passphrase is
+ * stored in this browser — or when the owner knocks by visiting /#add.
+ * Purely cosmetic: the server enforces the passphrase regardless. */
+export function adminUiVisible(): boolean {
+  return !isAdminLocked() || getAdminToken() !== null || window.location.hash === '#add'
+}

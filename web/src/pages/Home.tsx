@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useProjection } from '@intenteffect/react'
 import { filterLibrary, searchLibrary, textLibrary, type Word } from '@interlinear/shared'
+import { adminUiVisible } from '../admin.js'
 import { Logo } from '../App.js'
 import { AddTextForm } from '../components/AddTextForm.js'
 import { Spinner } from '../components/Spinner.js'
@@ -136,7 +137,7 @@ export function Home() {
         </>
       )}
 
-      <AddTextForm />
+      {adminUiVisible() && <AddTextForm />}
     </div>
   )
 }

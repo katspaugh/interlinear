@@ -8,7 +8,7 @@ import {
   textDetail,
   type Word,
 } from '@interlinear/shared'
-import { getAdminToken, setAdminToken } from '../admin.js'
+import { adminUiVisible, getAdminToken, setAdminToken } from '../admin.js'
 import { isRead, toggleRead, useReadMarks } from '../readMarks.js'
 import { DefinitionPanel } from '../components/DefinitionPanel.js'
 import { Spinner } from '../components/Spinner.js'
@@ -113,7 +113,7 @@ export function Reader() {
             />{' '}
             Read
           </label>
-          {!text.builtin && (
+          {!text.builtin && adminUiVisible() && (
             <button className="reader__delete" onClick={() => void remove()}>
               🗑 Delete text
             </button>

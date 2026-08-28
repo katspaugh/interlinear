@@ -104,8 +104,10 @@ Anthropic-specific structured outputs and instead asks for plain JSON,
 validated locally. Definitions always use the Anthropic API.
 
 Reading is public. When `ADMIN_TOKEN` is set, adding and removing texts
-requires that passphrase (asked for in the add form / on delete, remembered
-per browser); word lookups stay public but new entries are capped per day.
+requires that passphrase (remembered per browser); word lookups stay public
+but new entries are capped per day. On a locked instance the add form and
+delete buttons are also hidden from visitors — as the owner, open `/#add`
+once and enter the passphrase; that browser then always shows the owner UI.
 
 ## Deploying to DigitalOcean
 

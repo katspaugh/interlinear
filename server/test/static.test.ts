@@ -55,3 +55,12 @@ test('renderIndexHtml brands the shell for interlinear.cc', () => {
   assert.match(html, /<link rel="icon" href="\/favicon\.ico"/)
   assert.match(html, /property="og:image" content="https:\/\/interlinear\.cc\/img\/books\.jpg"/)
 })
+
+test('renderIndexHtml flags a passphrase-locked instance', () => {
+  assert.doesNotMatch(renderIndexHtml(SHELL, SUTTA_SITE), /admin-locked/)
+  assert.doesNotMatch(renderIndexHtml(SHELL, SUTTA_SITE, false), /admin-locked/)
+  assert.match(
+    renderIndexHtml(SHELL, SUTTA_SITE, true),
+    /<meta name="admin-locked" content="1" \/>/,
+  )
+})
