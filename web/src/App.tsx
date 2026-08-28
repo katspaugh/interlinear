@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useConnectionStatus } from '@intenteffect/react'
 import { site } from './site.js'
@@ -8,16 +7,7 @@ export function Logo() {
     return (
       <>
         sutta<span className="logo__dot">.</span>
-        {/* anicca: the letters flow like water; the word stays readable
-         * for screen readers via the visually-hidden copy */}
-        <span className="visually-hidden">stream</span>
-        <span className="logo__stream" aria-hidden="true">
-          {['s', 't', 'r', 'e', 'a', 'm'].map((letter, i) => (
-            <span key={i} style={{ '--i': i } as CSSProperties}>
-              {letter}
-            </span>
-          ))}
-        </span>
+        <span className="logo__stream">stream</span>
       </>
     )
   }

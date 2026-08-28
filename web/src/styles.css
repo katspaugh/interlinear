@@ -170,38 +170,104 @@ a {
   color: var(--highlight);
 }
 
-/* Impermanence: the letters of "stream" bob gently, a small wave
- * traveling left to right through the word like water. Negative
- * staggered delays keep it mid-flow from the first paint. */
-.logo__stream span {
-  display: inline-block;
-  animation: impermanence 2.4s ease-in-out infinite;
-  animation-delay: calc(var(--i) * -0.3s);
+/* Impermanence, Kusama-style: the word "stream" is filled with polka
+ * dots — three layers of ochre, umber and parchment — that drift slowly
+ * downstream while each layer's dots swell and shrink on its own beat,
+ * so the pulse wanders through the word. The letters never move.
+ * Em units keep everything proportional at header (22px) and hero
+ * (54px) sizes; drift end positions are whole multiples of each tile so
+ * the loop is seamless. The dot radii animate via registered custom
+ * properties — without @property support the dots render statically,
+ * and without background-clip: text the word stays plain white. */
+@property --pulse-a {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 24%;
+}
+
+@property --pulse-b {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 22%;
+}
+
+@property --pulse-c {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 26%;
+}
+
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .logo__stream {
+    background-color: #fff;
+    background-image:
+      radial-gradient(circle, var(--accent) var(--pulse-a, 24%), transparent calc(var(--pulse-a, 24%) + 4%)),
+      radial-gradient(circle, var(--chrome) var(--pulse-b, 22%), transparent calc(var(--pulse-b, 22%) + 4%)),
+      radial-gradient(circle, var(--highlight) var(--pulse-c, 26%), transparent calc(var(--pulse-c, 26%) + 4%));
+    background-size:
+      0.46em 0.46em,
+      0.37em 0.37em,
+      0.29em 0.29em;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation:
+      impermanence 16s linear infinite,
+      pulse-a 3.3s ease-in-out infinite,
+      pulse-b 4.7s ease-in-out -1.2s infinite,
+      pulse-c 2.6s ease-in-out -0.7s infinite;
+  }
 }
 
 @keyframes impermanence {
+  from {
+    background-position:
+      0 0,
+      0.1em 0.18em,
+      0.15em 0.08em;
+  }
+  to {
+    background-position:
+      0.92em 0.46em,
+      -0.64em 0.55em,
+      0.73em -0.21em;
+  }
+}
+
+@keyframes pulse-a {
   0%,
   100% {
-    transform: translateY(0.05em);
+    --pulse-a: 15%;
   }
   50% {
-    transform: translateY(-0.05em);
+    --pulse-a: 32%;
+  }
+}
+
+@keyframes pulse-b {
+  0%,
+  100% {
+    --pulse-b: 30%;
+  }
+  50% {
+    --pulse-b: 14%;
+  }
+}
+
+@keyframes pulse-c {
+  0%,
+  100% {
+    --pulse-c: 16%;
+  }
+  50% {
+    --pulse-c: 33%;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .logo__stream span {
+  .logo__stream {
     animation: none;
   }
-}
-
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
 }
 
 .header__status {
