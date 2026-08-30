@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { SEED_TEXTS } from '../src/seed-data.js'
+import { CANON_SEED_TEXTS } from '../src/seed-data-canon.js'
 import { FICTION_SEED_TEXTS } from '../src/seed-data-fiction.js'
 import { MN_SEED_TEXTS } from '../src/seed-data-mn.js'
 import { CLASSIC_SEED_TEXTS } from '../src/seed-data-classics.js'
 
-const ALL_SEEDS = [...SEED_TEXTS, ...MN_SEED_TEXTS, ...FICTION_SEED_TEXTS, ...CLASSIC_SEED_TEXTS]
+const ALL_SEEDS = [...SEED_TEXTS, ...CANON_SEED_TEXTS, ...MN_SEED_TEXTS, ...FICTION_SEED_TEXTS, ...CLASSIC_SEED_TEXTS]
 
 test('seed texts are well-formed', () => {
   assert.ok(SEED_TEXTS.length >= 3)
+  assert.ok(CANON_SEED_TEXTS.length === 4)
   assert.ok(MN_SEED_TEXTS.length === 12)
   assert.ok(FICTION_SEED_TEXTS.length >= 3)
   assert.ok(CLASSIC_SEED_TEXTS.length >= 3)
