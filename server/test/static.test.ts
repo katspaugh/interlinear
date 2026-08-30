@@ -59,12 +59,3 @@ test('renderIndexHtml brands the shell for interlinear.cc', () => {
   // Default theme: no class added to <html>.
   assert.match(html, /<html lang="en">/)
 })
-
-test('renderIndexHtml flags a passphrase-locked instance', () => {
-  assert.doesNotMatch(renderIndexHtml(SHELL, SUTTA_SITE), /admin-locked/)
-  assert.doesNotMatch(renderIndexHtml(SHELL, SUTTA_SITE, false), /admin-locked/)
-  assert.match(
-    renderIndexHtml(SHELL, SUTTA_SITE, true),
-    /<meta name="admin-locked" content="1" \/>/,
-  )
-})

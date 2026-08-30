@@ -2,7 +2,6 @@ import fs from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
 import { siteForHost, type SiteConfig } from '@interlinear/shared'
-import { adminTokenConfigured } from './auth.js'
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -31,18 +30,10 @@ function escapeHtml(text: string): string {
  * <html> (so the site's palette applies before the JS bundle runs — no flash
  * of the default blue), title, meta description, favicon, and social-preview
  * (Open Graph) tags — so a sutta.stream link unfurls as sutta.stream, not as
- * interlinear. When the instance requires an owner passphrase, an
- * admin-locked meta flag tells the client to hide owner-only UI (the add
- * form, delete buttons) from visitors — cosmetic only; the server enforces
- * the passphrase regardless.
+ * interlinear.
  */
-export function renderIndexHtml(
-  html: string,
-  site: SiteConfig,
-  adminLocked = false,
-): string {
+export function renderIndexHtml(html: string, site: SiteConfig): string {
   const social = [
-    ...(adminLocked ? [`<meta name="admin-locked" content="1" />`] : []),
     `<meta property="og:site_name" content="${escapeHtml(site.name)}" />`,
     `<meta property="og:type" content="website" />`,
     `<meta property="og:url" content="https://${site.domain}/" />`,
@@ -103,11 +94,7 @@ export function createStaticHandler(root: string) {
       const site = siteForHost(req.headers.host)
       let html = indexCache.get(site.id)
       if (html === undefined) {
-        html = renderIndexHtml(
-          fs.readFileSync(filePath, 'utf8'),
-          site,
-          adminTokenConfigured(),
-        )
+        html = renderIndexHtml(fs.readFileSync(filePath, 'utf8'), site)
         indexCache.set(site.id, html)
       }
       res.writeHead(200, {
