@@ -598,16 +598,28 @@ a {
 
 .reader__controls {
   float: right;
+  max-width: 100%;
   font-size: 14px;
   color: var(--muted);
   display: flex;
-  gap: 15px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 15px;
   align-items: center;
   font-family: var(--font-ui);
 }
 
+/* The checkboxes wrap as one unit: a line break may fall between the
+   gloss-mode toggle and this group, but never between the checkboxes. */
+.reader__toggles {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
 .reader__toggle {
   cursor: pointer;
+  white-space: nowrap;
 }
 
 /* Gloss mode: fluent / literal (morpheme-by-morpheme) / off */
@@ -717,7 +729,11 @@ a {
 .word {
   display: inline-block;
   text-align: center;
-  vertical-align: bottom;
+  /* Align words by their text baseline (an inline-block's baseline is the
+   * baseline of its last line, i.e. the word text). Bottom-aligning boxes
+   * instead would raise words with morpheme underlines: the 3px of seam
+   * below the text lifts the text off the shared bottom edge. */
+  vertical-align: baseline;
   line-height: 1.2;
 }
 
@@ -1052,6 +1068,13 @@ a {
     width: calc(100% + 30px);
   }
 
+  /* On phones the controls can't share a line with the heading — make them
+     a normal block above it instead of a float that overflows the screen. */
+  .reader__controls {
+    float: none;
+    margin-bottom: 20px;
+  }
+
   .reader__sidebar {
     position: fixed;
     z-index: 2;
@@ -1129,6 +1152,10 @@ a {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  /* min-width: 0 lets the column shrink below a long title word's width
+   * (Pali compounds); without breaking, that word would overflow across
+   * the status chip and reference to the right. */
+  overflow-wrap: break-word;
 }
 
 .library__orig {
@@ -1153,6 +1180,16 @@ a {
   font-size: 13px;
   font-style: italic;
   white-space: nowrap;
+}
+
+/* Phones: title + chips + reference don't fit side by side without
+ * crushing the title, so the meta line moves under the titles. */
+@media (max-width: 600px) {
+  .library__row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
 }
 
 .library__read,
