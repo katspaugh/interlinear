@@ -12,9 +12,28 @@
     />
     <link rel="icon" href="/favicon.ico" />
     <title>interlinear — read any text word by word</title>
+    <!-- Browsers that ignore type="module" cannot run the app bundle at all
+         (the Kindle's browser, old WebKit): they run this classic script
+         instead and land on the plain-HTML version. ?full=1 opts out. -->
+    <script nomodule>
+      if (window.location.search.indexOf('full=') < 0) {
+        window.location.replace('/lite' + window.location.pathname)
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Replaced by the app on mount. A browser new enough for modules but
+         too old for the bundle never gets that far and keeps this notice,
+         which is also the loading state on a slow connection. -->
+    <div id="root">
+      <div id="boot" style="font: 16px/1.5 Georgia, serif; padding: 40px 20px; text-align: center">
+        <p>Loading the reader…</p>
+        <p><a href="/lite">If nothing happens, open the lite version →</a></p>
+      </div>
+    </div>
+    <script type="module">
+      document.getElementById('boot')?.remove()
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

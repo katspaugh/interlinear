@@ -17,7 +17,8 @@ const MIME: Record<string, string> = {
   '.txt': 'text/plain; charset=utf-8',
 }
 
-function escapeHtml(text: string): string {
+/** Escape text for interpolation into HTML (also used by the lite pages). */
+export function escapeHtml(text: string): string {
   return text
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')

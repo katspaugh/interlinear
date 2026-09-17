@@ -1,4 +1,5 @@
 export * from './contracts.js'
+export * from './definitions.js'
 export * from './library.js'
 export * from './morphology.js'
 export * from './presets.js'

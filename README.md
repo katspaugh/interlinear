@@ -45,7 +45,9 @@ Two layers turn reading into learning:
   stores a `pending` definition row) and a background **gloss worker** calls
   Claude, then commits results through internal intents. Those emit the events
   (`text.chunkGlossed`, `word.defined`) that update every connected client's
-  projections over SSE. The server also serves the built web app.
+  projections over SSE. The server also serves the built web app — and, for
+  browsers that cannot run it, the no-JavaScript **lite mode** below
+  (`server/src/lite.ts`).
 - **`web/`** — React 19 + Vite. `useProjection` renders the library, the
   reader, and the dictionary sidebar; `useSend` issues intents. The design is
   a faithful port of the original interlinear.io.
@@ -82,6 +84,36 @@ library filter); the server rewrites `index.html`'s title, description,
 favicon, and Open Graph tags per `Host` header (`server/src/static.ts`), so
 links unfurl with the right branding. Because the database is shared, every
 gloss and dictionary entry generated on one site serves the other.
+
+## Reading on a Kindle
+
+E-reader browsers cannot run the app: the Kindle's experimental browser is
+an ancient WebKit that does not understand `type="module"`, so it never
+executes the bundle and shows a blank page. **Lite mode** (`/lite`,
+`server/src/lite.ts`) serves the same library, reader, and dictionary as
+plain HTML documents with **no JavaScript at all** — links instead of click
+handlers, a `<form method="get">` instead of the live search box, one page
+per dictionary entry instead of the sidebar, and reading options (fluent /
+literal glosses, translation on or off) as links that carry their state.
+Long suttas are paginated, since a 300-stanza document is more than an e-ink
+browser wants to hold. The CSS is deliberately primitive — no flexbox, no
+grid, no custom properties — and black on white, e-ink having no color.
+The data comes from the same projections the SPA reads, so lite mode shows
+whatever the app shows, including glosses that landed a minute ago.
+
+Legacy browsers get there by themselves three ways: a `nomodule` script in
+`index.html` (the most reliable signal — a browser that ignores
+`type="module"` cannot run the bundle either), a narrow user-agent check for
+e-readers whose JavaScript is off (`liteRedirectFor`), and a fallback inside
+`#root` that React replaces on mount, so a browser that loads the bundle but
+chokes on it still sees a link. `?full=1` on any URL opts back out, and the
+app's footer links to `/lite` for anyone who just prefers it.
+
+Tapping a word works the same way it does in the app — the page requests the
+DPD and LLM entries and reloads itself (`<meta http-equiv="refresh">`) until
+they land, at most eight times. The daily dictionary cap and the gloss queue
+cap apply exactly as they do to the app, since lite mode issues the same
+intents as an anonymous visitor.
 
 ## Importing the canon
 

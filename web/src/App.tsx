@@ -82,6 +82,11 @@ export function App() {
       <footer className="footer">
         <div className="container footer__inner">
           <Footer />
+          <p className="footer__lite">
+            {/* Plain HTML, no JavaScript — for Kindles and other e-readers,
+                whose browsers cannot run this app. */}
+            <a href="/lite">Lite version for e-readers</a>
+          </p>
           {site.id === 'interlinear' && (
             <a
               className="footer__camera"

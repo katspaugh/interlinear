@@ -3,6 +3,7 @@ import { useProjection, useSend } from '@intenteffect/react'
 import {
   defineWord,
   langHasDpd,
+  mergeDefinitions,
   wordDefinition,
   type Definition,
   type DefinitionTier,
@@ -115,22 +116,11 @@ export function DefinitionPanel(props: {
 
   // Progressive, complementary display: DPD's instant entry shows first with
   // the authoritative basics, and the LLM's complementary sections extend it
-  // in place when they land. DPD keeps headword and meanings; grammar stays
-  // DPD's when it is a real inflection reading ("voc pl of bhikkhu"), else
-  // the LLM's fuller analysis wins over a bare pos label ("sandhi").
+  // in place when they land (see mergeDefinitions, shared with the lite
+  // word page). `merged` is only the both-tiers case — the copy below tells
+  // the reader whether the entry is still growing.
   const merged: Definition | null =
-    dpdEntry && fastEntry
-      ? {
-          headword: dpdEntry.headword,
-          grammar: dpdEntry.grammar.includes(' of ')
-            ? dpdEntry.grammar
-            : fastEntry.grammar || dpdEntry.grammar,
-          meanings: dpdEntry.meanings,
-          analysis: fastEntry.analysis ?? dpdEntry.analysis,
-          etymology: fastEntry.etymology,
-          morphemes: fastEntry.morphemes,
-        }
-      : null
+    dpdEntry && fastEntry ? mergeDefinitions(dpdEntry, fastEntry) : null
   const shownEntry = merged ?? fastEntry ?? dpdEntry
   const loading = !shownEntry && fastState?.status !== 'failed'
   const fastFailedBehindDpd =

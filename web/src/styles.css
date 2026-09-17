@@ -227,6 +227,11 @@ a {
   color: #fff;
 }
 
+/* The no-JavaScript version, for e-readers whose browsers can't run this app. */
+.footer__lite {
+  white-space: nowrap;
+}
+
 .footer__camera {
   text-decoration: none;
 }

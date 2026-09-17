@@ -2,6 +2,7 @@ import http from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createApp } from './app.js'
+import { createLiteHandler, liteRedirectFor } from './lite.js'
 import { seed } from './seed.js'
 import { createStaticHandler } from './static.js'
 import { GlossWorker } from './worker.js'
@@ -25,6 +26,7 @@ worker.start()
 store.subscribe(() => worker.kick())
 
 const serveStatic = createStaticHandler(webDist)
+const serveLite = createLiteHandler(app)
 
 const server = http.createServer((req, res) => {
   const url = req.url ?? '/'
@@ -34,6 +36,21 @@ const server = http.createServer((req, res) => {
   }
   if (url.startsWith('/_intenteffect')) {
     app.nodeHandler(req, res)
+    return
+  }
+  if (url === '/lite' || url.startsWith('/lite/') || url.startsWith('/lite?')) {
+    void serveLite(req, res).catch((cause: unknown) => {
+      console.error('[lite]', cause)
+      if (!res.headersSent) res.writeHead(500).end()
+    })
+    return
+  }
+  // Browsers that cannot run the app bundle (Kindle and friends) would see a
+  // blank page; send them to the plain-HTML version instead. `?full=1` opts
+  // out — the escape hatch every lite page links to.
+  const lite = liteRedirectFor(url, req.headers['user-agent'])
+  if (lite) {
+    res.writeHead(302, { location: lite, vary: 'user-agent', 'cache-control': 'no-cache' }).end()
     return
   }
   serveStatic(req, res)
