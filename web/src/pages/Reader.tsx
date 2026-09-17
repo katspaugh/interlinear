@@ -20,12 +20,11 @@ import {
 } from '@interlinear/shared'
 import { adminUiVisible, getAdminToken, setAdminToken } from '../admin.js'
 import { isRead, toggleRead, useReadMarks } from '../readMarks.js'
-import { recordTextSeen } from '../knownWords.js'
 import { useReadingProgress } from '../readingProgress.js'
 import { site } from '../site.js'
 import { DefinitionPanel } from '../components/DefinitionPanel.js'
 import { Spinner } from '../components/Spinner.js'
-import { Words, type GlossMode } from '../components/Words.js'
+import { Words, wordOccurrences, type GlossMode } from '../components/Words.js'
 
 interface SelectedWord {
   word: string
@@ -98,6 +97,14 @@ export function Reader() {
   const sutta = site.id === 'sutta'
   const chunks = detail.status === 'ready' ? (detail.data?.chunks ?? []) : []
   const passages = groupPassages(chunks, PASSAGE_SIZE)
+  // Glosses fade with repetition, and a text is one run of words however many
+  // chunks it is cut into: the count carries over from chunk to chunk, so the
+  // second occurrence of a word fades even when it falls in a later stanza.
+  const occurrences = new Map<number, number[]>()
+  const running = new Map<string, number>()
+  for (const chunk of chunks) {
+    occurrences.set(chunk.idx, wordOccurrences(chunk.words ?? [], running))
+  }
   const progress = useReadingProgress(sutta, passages.length)
 
 
@@ -119,20 +126,6 @@ export function Reader() {
     glossRequested.current = textId
     void send(requestGloss, { id: textId })
   }, [textId, textStatus, send])
-
-  // Once a text is fully glossed and open in front of the reader, count its
-  // words into this browser's exposure counts (once per text) — glosses of
-  // words seen in previously read texts start out faded.
-  useEffect(() => {
-    if (textStatus !== 'ready' || detail.status !== 'ready' || !detail.data) return
-    const { text, chunks } = detail.data
-    recordTextSeen(
-      text.lang,
-      text.slug,
-      chunks.flatMap((chunk) => chunk.words ?? []).map((word) => normalizeWord(word.w)),
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [textStatus, slug])
 
   if (detail.status === 'loading') return <Spinner />
   if (detail.status === 'error') {
@@ -351,6 +344,7 @@ export function Reader() {
                     {chunk.words ? (
                       <Words
                         words={chunk.words}
+                        occurrences={occurrences.get(chunk.idx)}
                         lang={text.lang}
                         glossMode={glossMode}
                         showMorphs={showMorphs}

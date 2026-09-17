@@ -140,13 +140,6 @@
   --danger: #a3352c;
   --form-bg: #fbf8f2;
 
-  /* Familiar words lose their glosses, one step at a time, until the last
-   * step dissolves them completely — rule 4. Hovering still peeks. */
-  --gloss-1: #b7ae9f;
-  --gloss-2: #c9c1b2;
-  --gloss-3: #ddd6c8;
-  --gloss-4: transparent;
-
   /* Newsreader for everything read, Sora for everything clicked. Sora only
    * at 10–12px, uppercase, .14–.2em tracking — never for prose. */
   --font-reading: Newsreader, Georgia, 'Times New Roman', serif;
@@ -1068,16 +1061,18 @@
   line-height: 1.2;
 }
 
-/* The gloss sits above at 11px so the eye lands on the Pali first. No
- * colour here on purpose: it comes from --gloss / --gloss-1..4 through
- * .word_occur_N, which carries the same specificity as this rule and would
- * lose to it — and with it the whole fade ladder. */
+/* The gloss sits above at 11px so the eye lands on the Pali first — rule 4:
+ * a repeated word's gloss steps down in opacity (.word_occur_N) until an
+ * explicit "known" dissolves it. The colour stays --gloss at every step, so
+ * this rule sets none; the transition covers the fade as well. */
 .theme-sutta .word__gloss {
   margin-bottom: 3px;
   min-height: 13px;
   font: 500 11px/1 var(--font-ui);
   letter-spacing: 0.04em;
-  transition: color 0.3s;
+  transition:
+    color 0.3s,
+    opacity 0.3s;
 }
 
 .theme-sutta .word__text {
@@ -1097,6 +1092,7 @@
 .theme-sutta .word_clickable:hover .word__gloss,
 .theme-sutta .word_selected .word__gloss {
   color: var(--muted);
+  opacity: 1;
 }
 
 /* Morpheme seams keep their four semantic colours — a prefix is the same

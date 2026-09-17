@@ -29,11 +29,12 @@ Two layers turn reading into learning:
   build the word up segment by segment, each with the concrete spatial
   imagery behind its abstract meaning and cognates the reader already knows,
   grounded in a hand-curated table of the Pali prefixes.
-- **Reader memory.** Glosses of familiar words fade: repeated words within a
-  page, words seen in previously finished texts, and words marked "I know
-  this word" (fully dissolved — hover to peek). Kept per language in
-  localStorage (`web/src/knownWords.ts`), never sent to the server; the page
-  turns into bare Pali as the reader's exposure grows.
+- **Reader memory.** Glosses fade with repetition: the first occurrence of a
+  word in a text is at full strength, and every occurrence after that is
+  dimmer than the one before (counted across the whole text, not per stanza),
+  down to a floor that stays readable. Words marked "I know this word" are
+  dissolved entirely — hover to peek — and that list is kept per language in
+  localStorage (`web/src/knownWords.ts`), never sent to the server.
 
 ## How it works
 

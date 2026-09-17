@@ -16,10 +16,6 @@
   --ink: #333;
   --muted: #777;
   --gloss: #aaa;
-  --gloss-1: #ccc;
-  --gloss-2: #ddd;
-  --gloss-3: #eee;
-  --gloss-4: #fff;
   --danger: #e53b3a;
   --form-bg: rgba(0, 138, 204, 0.85);
   --font-ui: Helvetica, Arial, sans-serif;
@@ -680,22 +676,34 @@ a {
 .word_clickable:hover .word__gloss,
 .word_selected .word__gloss {
   color: var(--muted);
+  opacity: 1;
 }
 
-/* Familiar words: their glosses fade away. Levels 1–3 come from repetition
- * (in-page and across previously read texts); level 4 — fully dissolved,
- * hover to peek — from the reader marking the word known. */
+/* Repetition fades a gloss step by step: the first time a word appears its
+ * gloss is at full strength, every occurrence after that is dimmer than the
+ * one before, down to a floor that keeps it readable. Only an explicit "I
+ * know this word" dissolves a gloss completely — hover to peek. */
 .word_occur_1 .word__gloss {
-  color: var(--gloss-1);
+  opacity: 0.8;
 }
 .word_occur_2 .word__gloss {
-  color: var(--gloss-2);
+  opacity: 0.7;
 }
 .word_occur_3 .word__gloss {
-  color: var(--gloss-3);
+  opacity: 0.6;
 }
 .word_occur_4 .word__gloss {
-  color: var(--gloss-4);
+  opacity: 0.5;
+}
+.word_occur_5 .word__gloss {
+  opacity: 0.4;
+}
+.word_occur_6 .word__gloss {
+  opacity: 0.3;
+}
+
+.word_known .word__gloss {
+  opacity: 0;
 }
 
 /* Morpheme seams: each segment of a decomposed word underlined by kind,

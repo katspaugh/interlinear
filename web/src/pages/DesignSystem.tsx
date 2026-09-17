@@ -263,7 +263,7 @@ export function DesignSystem() {
             <WordState className="word word_clickable ds__word_hover" label="Hover" />
             <WordState className="word word_clickable word_selected" label="Selected" />
             <WordState
-              className="word word_clickable word_known word_occur_4"
+              className="word word_clickable word_known"
               label="Known · bare"
             />
           </div>

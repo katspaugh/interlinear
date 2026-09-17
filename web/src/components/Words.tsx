@@ -1,15 +1,41 @@
-import { Fragment } from 'react'
+import { Fragment, useMemo } from 'react'
 import { literalGloss, normalizeWord, type Word } from '@interlinear/shared'
-import { isKnown, seenCount, useWordKnowledge } from '../knownWords.js'
+import { isKnown, useWordKnowledge } from '../knownWords.js'
 
 export type GlossMode = 'fluent' | 'literal' | 'off'
 
+/** Beyond this many repetitions the gloss stops fading further — it stays
+ * readable, since only an explicit "I know this word" dissolves it fully. */
+const MAX_FADE = 6
+
 /**
- * The interlinear view: each word with its gloss above it. Glosses fade as
- * words become familiar — repeated words within the page (like the original
- * interlinear.io), words seen in previously finished texts, and words the
- * reader marked known (fully faded; hover to peek). When `lang` is absent
- * (library cards, the epigraph) only the in-page fading applies.
+ * The occurrence index of each word (0 the first time it appears, 1 the
+ * second time, …), which drives how far its gloss is faded. Pass a shared
+ * `running` map to count one text's chunks as a single run, so the second
+ * occurrence of a word fades even when it falls in a later stanza.
+ */
+export function wordOccurrences(
+  words: Word[],
+  running = new Map<string, number>(),
+): number[] {
+  return words.map((word) => {
+    const key = normalizeWord(word.w)
+    if (!key) return 0
+    const occur = running.get(key) ?? 0
+    running.set(key, occur + 1)
+    return occur
+  })
+}
+
+/**
+ * The interlinear view: each word with its gloss above it. The first time a
+ * word appears its gloss is at full strength; every repetition after that is
+ * dimmer than the one before (like the original interlinear.io), until it
+ * bottoms out at MAX_FADE. Words the reader marked known are dissolved
+ * entirely — hover to peek — which needs `lang` (absent on library cards and
+ * the epigraph, where only the repetition fading applies). Pass `occurrences`
+ * (from `wordOccurrences`) to carry the count of earlier chunks into this
+ * one; without it the fading restarts.
  *
  * In 'literal' mode the gloss line shows the morpheme-by-morpheme reading
  * ("mind·before·going") where a word has one; `showMorphs` renders the
@@ -20,15 +46,19 @@ export function Words(props: {
   lang?: string
   glossMode?: GlossMode
   showMorphs?: boolean
+  occurrences?: number[]
   onWordClick?: (word: Word) => void
   /** Fired on pointerdown, before the click completes — lets the reader
    * start fetching the definition a beat earlier. */
   onWordDown?: (word: Word) => void
   selectedWord?: string | null
 }) {
-  const { lang, glossMode = 'fluent' } = props
+  const { lang, glossMode = 'fluent', words } = props
   useWordKnowledge()
-  const seen = new Map<string, number>()
+  const occurrences = useMemo(
+    () => props.occurrences ?? wordOccurrences(words),
+    [props.occurrences, words],
+  )
   return (
     <div
       className={[
@@ -39,13 +69,10 @@ export function Words(props: {
         .filter(Boolean)
         .join(' ')}
     >
-      {props.words.map((word, i) => {
+      {words.map((word, i) => {
         const key = normalizeWord(word.w)
-        const occur = seen.get(key) ?? 0
-        if (key) seen.set(key, occur + 1)
+        const fade = Math.min(occurrences[i] ?? 0, MAX_FADE)
         const known = Boolean(lang && key && isKnown(lang, key))
-        const prior = lang && key ? Math.min(seenCount(lang, key), 3) : 0
-        const fade = known ? 4 : Math.min(prior + occur, 4)
         const clickable = Boolean(props.onWordClick && key)
         const selected = props.selectedWord != null && key === props.selectedWord
         const gloss = glossMode === 'literal' ? (literalGloss(word.m) ?? word.g) : word.g
@@ -55,7 +82,7 @@ export function Words(props: {
             <span
               className={[
                 'word',
-                `word_occur_${fade}`,
+                fade > 0 ? `word_occur_${fade}` : '',
                 known ? 'word_known' : '',
                 clickable ? 'word_clickable' : '',
                 selected ? 'word_selected' : '',
