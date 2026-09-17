@@ -39,7 +39,12 @@ Two layers turn reading into learning:
 
 - **`shared/`** — the IntentEffect contracts (Zod-validated events, intents,
   projections) imported by both client and server, plus pure text utilities
-  (chunking, tokenization, word normalization).
+  (chunking, tokenization, word normalization) and the **passage** grouping
+  both readers navigate by (`shared/src/passages.ts`): a text is stored one
+  chunk per source segment — MN 1 is 194 of them, averaging seven words —
+  which is the right unit to gloss and far too fine to read, so consecutive
+  chunks are gathered into passages of about ninety words for the index, the
+  spacing on the page, and the lite reader's pages.
 - **`server/`** — the IntentEffect server on Postgres. Intents record what was
   asked (`text.add` stores the chunks with status `glossing`; `word.define`
   stores a `pending` definition row) and a background **gloss worker** calls

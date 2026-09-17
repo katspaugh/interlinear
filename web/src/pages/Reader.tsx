@@ -5,6 +5,7 @@ import {
   defineWord,
   filterLibrary,
   groupLibrary,
+  groupPassages,
   langHasDpd,
   normalizeWord,
   removeText,
@@ -13,6 +14,7 @@ import {
   textDetail,
   textLibrary,
   type Chunk,
+  type Passage,
   type TextSummary,
   type Word,
 } from '@interlinear/shared'
@@ -44,9 +46,16 @@ const GLOSS_MODES: { id: GlossMode; label: string; title: string }[] = [
  * being scannable long before the strip stops fitting. */
 const LABELLED_PASSAGES = 8
 
-/** A passage's label in the index: its opening words, which is the only
- * name a chunk has. */
-function passageLabel(chunk: Chunk): string {
+/** How a text is broken into passages for the index and the page: chunks are
+ * source segments, which for an imported sutta are far too fine to navigate
+ * by (MN 1 is 194 of them, averaging seven words). See shared/passages.ts. */
+const PASSAGE_SIZE = { targetWords: 90, maxPassages: 20 }
+
+/** A passage's label in the index: the opening words of its first chunk,
+ * which is the only name a passage has. */
+function passageLabel(passage: Passage): string {
+  const chunk = passage.chunks[0]
+  if (!chunk) return ''
   const words = chunk.words?.slice(0, 3).map((word) => word.w)
   const text = words?.length ? words.join(' ') : chunk.original.trim().split(/\s+/, 3).join(' ')
   return text.replace(/[,.;:—]$/, '')
@@ -88,7 +97,8 @@ export function Reader() {
 
   const sutta = site.id === 'sutta'
   const chunks = detail.status === 'ready' ? (detail.data?.chunks ?? []) : []
-  const progress = useReadingProgress(sutta, chunks.length)
+  const passages = groupPassages(chunks, PASSAGE_SIZE)
+  const progress = useReadingProgress(sutta, passages.length)
 
 
   // Imported texts wait unglossed until somebody reads them: opening one
@@ -146,7 +156,13 @@ export function Reader() {
   const hasMorphs = chunks.some((chunk) =>
     chunk.words?.some((word) => word.m && word.m.length > 1),
   )
-  const labelled = chunks.length <= LABELLED_PASSAGES
+  // Labels earn their place only when they tell the passages apart: a sutta
+  // built on a refrain ("Akaṅkheyya ce, bhikkhave …") opens half its
+  // passages with the same three words, and six identical chips are worse
+  // than six numbers.
+  const labels = passages.map(passageLabel)
+  const labelled =
+    passages.length <= LABELLED_PASSAGES && new Set(labels).size === labels.length
 
   // Fired on pointerdown: kick off the server-side lookup before the click
   // even lands, so the entry is a few ms closer when the sidebar opens.
@@ -199,30 +215,30 @@ export function Reader() {
 
       <div className="container reader">
         <div className="reader__text">
-          {sutta && chunks.length > 1 && (
+          {sutta && passages.length > 1 && (
             <div className="reader__passages">
               <span className="reader__passages-label">Passage</span>
               <div className="reader__passage-list">
-                {chunks.map((chunk, i) => (
+                {passages.map((passage) => (
                   <button
                     type="button"
-                    key={chunk.idx}
+                    key={passage.idx}
                     className={`reader__passage ${
-                      progress.active === i ? 'reader__passage_current' : ''
+                      progress.active === passage.idx ? 'reader__passage_current' : ''
                     }`}
-                    aria-current={progress.active === i}
-                    title={passageLabel(chunk)}
-                    onClick={() => progress.scrollTo(i)}
+                    aria-current={progress.active === passage.idx}
+                    title={labels[passage.idx]}
+                    onClick={() => progress.scrollTo(passage.idx)}
                   >
-                    <span className="reader__passage-n">{i + 1}</span>
+                    <span className="reader__passage-n">{passage.idx + 1}</span>
                     {labelled && (
-                      <span className="reader__passage-label">{passageLabel(chunk)}</span>
+                      <span className="reader__passage-label">{labels[passage.idx]}</span>
                     )}
                   </button>
                 ))}
               </div>
               <span className="reader__progress-note">
-                Passage {progress.active + 1} of {chunks.length}
+                Passage {progress.active + 1} of {passages.length}
               </span>
             </div>
           )}
@@ -319,26 +335,38 @@ export function Reader() {
             </p>
           )}
 
+          {/* One section per passage, so the space between reading units is
+              the space the index jumps to — and the segments inside one
+              (MN 1's elided repetitions, say) stay together as a block. */}
           <div className="reader__chunks" ref={progress.containerRef}>
-            {chunks.map((chunk, i) => (
-              <div className="reader__chunk" key={chunk.idx} data-passage={i}>
-                {chunk.words ? (
-                  <Words
-                    words={chunk.words}
-                    lang={text.lang}
-                    glossMode={glossMode}
-                    showMorphs={showMorphs}
-                    onWordClick={selectWord}
-                    onWordDown={prefetchWord}
-                    selectedWord={selected?.word}
-                  />
-                ) : (
-                  <div className="reader__raw">{chunk.original}</div>
-                )}
-                {(showTranslation || !chunk.words) && chunk.translation && (
-                  <p className="reader__translation">{chunk.translation}</p>
-                )}
-              </div>
+            {passages.map((passage) => (
+              <section
+                className="reader__passage-body"
+                key={passage.idx}
+                data-passage={passage.idx}
+                aria-label={`Passage ${passage.idx + 1}`}
+              >
+                {passage.chunks.map((chunk) => (
+                  <div className="reader__chunk" key={chunk.idx}>
+                    {chunk.words ? (
+                      <Words
+                        words={chunk.words}
+                        lang={text.lang}
+                        glossMode={glossMode}
+                        showMorphs={showMorphs}
+                        onWordClick={selectWord}
+                        onWordDown={prefetchWord}
+                        selectedWord={selected?.word}
+                      />
+                    ) : (
+                      <div className="reader__raw">{chunk.original}</div>
+                    )}
+                    {(showTranslation || !chunk.words) && chunk.translation && (
+                      <p className="reader__translation">{chunk.translation}</p>
+                    )}
+                  </div>
+                ))}
+              </section>
             ))}
           </div>
 

@@ -8,10 +8,10 @@ import {
   type TextSummary,
 } from '@interlinear/shared'
 import {
-  CHUNKS_PER_PAGE,
   createLiteHandler,
   isLegacyBrowser,
   LIBRARY_PAGE_SIZE,
+  PAGE_WORDS,
   liteRedirectFor,
   pageParam,
   renderLibraryPage,
@@ -209,9 +209,11 @@ test('renderTextPage honours the gloss and translation toggles', () => {
 })
 
 test('renderTextPage paginates long texts and keeps the reading options', () => {
-  const chunks = Array.from({ length: CHUNKS_PER_PAGE * 2 + 1 }, (_, idx) => ({
+  // Three pages' worth of one-word chunks: pagination goes by words, not by
+  // a fixed number of source segments.
+  const chunks = Array.from({ length: PAGE_WORDS * 3 }, (_, idx) => ({
     idx,
-    original: `stanza ${idx}`,
+    original: `word${idx}`,
     words: [{ w: `word${idx}`, g: `gloss${idx}` }],
     translation: null,
   }))
@@ -221,10 +223,19 @@ test('renderTextPage paginates long texts and keeps the reading options', () => 
     translation: true,
   })
   assert.match(html, /Page 2 of 3/)
-  assert.match(html, new RegExp(`word${CHUNKS_PER_PAGE}`))
+  assert.match(html, new RegExp(`word${PAGE_WORDS}\\b`))
   assert.doesNotMatch(html, /word0\b/)
   // Next/previous carry the reader's toggles.
   assert.match(html, /href="\/lite\/text\/mn10\?p=3&amp;g=off&amp;tr=1"/)
+})
+
+test('renderTextPage keeps a short text on one page', () => {
+  const html = renderTextPage(SUTTA_SITE, detail(), {
+    page: 1,
+    gloss: 'fluent',
+    translation: false,
+  })
+  assert.doesNotMatch(html, /Page 1 of/)
 })
 
 test('renderTextPage shows the original when a chunk has no glosses yet', () => {

@@ -23,6 +23,7 @@ import {
   defineWord,
   filterLibrary,
   groupLibrary,
+  groupPassages,
   langHasDpd,
   literalGloss,
   mergeDefinitions,
@@ -45,9 +46,22 @@ import {
 import type { App } from './app.js'
 import { escapeHtml } from './static.js'
 
-/** Chunks (stanzas/paragraphs) per reader page — a Kindle renders a long
- * sutta far more happily in slices than in one 300-stanza document. */
-export const CHUNKS_PER_PAGE = 12
+/** Words per reader page — a Kindle renders a long sutta far more happily
+ * in slices than in one 300-stanza document. Slicing goes by passage (see
+ * shared/passages.ts) rather than by a fixed number of source segments,
+ * which differ in size by two orders of magnitude between texts: one page
+ * is one passage of about this many words. */
+export const PAGE_WORDS = 400
+
+/** The passages one lite page each shows. */
+function litePages(chunks: Chunk[]) {
+  return groupPassages(chunks, { targetWords: PAGE_WORDS })
+}
+
+/** How many pages a text's reader has. */
+export function litePageCount(chunks: Chunk[]): number {
+  return Math.max(litePages(chunks).length, 1)
+}
 
 /** Library entries per index page. */
 export const LIBRARY_PAGE_SIZE = 60
@@ -373,9 +387,10 @@ export function renderTextPage(
   view: { page: number; gloss: GlossMode; translation: boolean },
 ): string {
   const { text, chunks } = detail
-  const pages = Math.max(Math.ceil(chunks.length / CHUNKS_PER_PAGE), 1)
+  const passages = litePages(chunks)
+  const pages = Math.max(passages.length, 1)
   const page = Math.min(view.page, pages)
-  const slice = chunks.slice((page - 1) * CHUNKS_PER_PAGE, page * CHUNKS_PER_PAGE)
+  const slice = passages[page - 1]?.chunks ?? []
   const base = `/lite/text/${encodeURIComponent(text.slug)}`
   const href = (over: { p?: number; g?: GlossMode; tr?: boolean }): string =>
     url(base, {
@@ -644,7 +659,7 @@ export function createLiteHandler(app: App) {
         if (detail.text.status === 'unglossed' || detail.text.status === 'failed') {
           await send(app, requestGloss.type, { id: detail.text.id })
         }
-        const pages = Math.max(Math.ceil(detail.chunks.length / CHUNKS_PER_PAGE), 1)
+        const pages = litePageCount(detail.chunks)
         writeHtml(
           req,
           res,

@@ -404,8 +404,11 @@ export function DesignSystem() {
                 </span>
               </div>
               <span className="ds__note">
-                A passage has no name, so it is labelled with its opening words. Past
-                eight passages the strip drops the labels and keeps the numbers.
+                A passage is a run of source segments about ninety words long, so a
+                sutta stored as two hundred fragments still has an index you can
+                scan. It has no name, so it is labelled with its opening words —
+                past eight passages, or where a refrain makes two labels read the
+                same, the strip drops them and keeps the numbers.
               </span>
             </div>
           </div>

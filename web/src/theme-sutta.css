@@ -971,7 +971,9 @@
   color: var(--danger);
 }
 
-/* Interlinear body: 44px between passages, 14px within one. */
+/* Interlinear body: 44px between passages, 14px within one. A passage is a
+   run of source segments (see shared/passages.ts), so the elided
+   repetitions of a text like MN 1 read as one block, not as a list. */
 .theme-sutta .reader__chunks {
   display: flex;
   flex-direction: column;
@@ -980,9 +982,15 @@
   max-width: var(--measure);
 }
 
+.theme-sutta .reader__passage-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-margin-top: calc(var(--header-h) + 24px);
+}
+
 .theme-sutta .reader__chunk {
   margin: 0;
-  scroll-margin-top: calc(var(--header-h) + 24px);
 }
 
 .theme-sutta .reader__raw {
