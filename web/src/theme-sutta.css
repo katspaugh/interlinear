@@ -183,9 +183,14 @@
   text-decoration-color: rgba(125, 74, 30, 0.7);
 }
 
+/* Side gutters only. The shorthand would also zero the vertical padding of
+ * every .container, and .header__inner's is what makes the header --header-h
+ * tall — the height the sticky progress bar, the dictionary sheet and the
+ * passage scroll margins are all measured against. */
 .theme-sutta .container {
   max-width: 1080px;
-  padding: 0 32px;
+  padding-left: 32px;
+  padding-right: 32px;
 }
 
 /* The one small-caps label used everywhere: chips, eyebrows, column heads. */
@@ -1495,7 +1500,8 @@
 
 @media (max-width: 640px) {
   .theme-sutta .container {
-    padding: 0 16px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .theme-sutta .hero {
