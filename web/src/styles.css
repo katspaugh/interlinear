@@ -978,7 +978,7 @@ a {
   }
 }
 
-/* Mobile: the sidebar becomes a slide-in overlay, like the original */
+/* Mobile: the dictionary becomes a sheet pinned to the top of the screen */
 @media (max-width: 900px) {
   .reader {
     flex-direction: column;
@@ -996,23 +996,35 @@ a {
     margin-bottom: 20px;
   }
 
+  /* Laid over the text from the top of the screen, not after it: in the
+     flow the dictionary column wraps under the text, so on a phone the
+     entry lands below the fold and tapping a word looks like nothing
+     happened. Themes with a sticky header set --dict-top to the height it
+     should clear (see theme-sutta.css); the sheet hides by sliding up
+     behind it. */
   .reader__sidebar {
     position: fixed;
-    z-index: 2;
+    z-index: 18;
     left: 0;
-    top: 0;
+    top: var(--dict-top, 0px);
     width: 100%;
-    height: 100%;
+    max-height: 72vh;
+    max-height: 72dvh;
     overflow-x: hidden;
     overflow-y: auto;
     background-color: var(--bg);
-    padding: 30px 15px;
-    transform: translateX(-100%);
+    padding: 15px;
+    box-shadow: 0 14px 28px -20px rgba(0, 0, 0, 0.55);
+    /* Off the top edge of the screen, not merely behind the header: the
+       sheet's own top offset has to be travelled too, so a header that
+       measures a little taller or shorter than --dict-top never leaves a
+       sliver of the entry showing. */
+    transform: translateY(calc(-100% - var(--dict-top, 0px)));
     transition: transform 300ms ease-out;
   }
 
   .reader__sidebar_active {
-    transform: translateX(0);
+    transform: translateY(0);
   }
 
   .reader__sidebar-close {
@@ -1023,6 +1035,7 @@ a {
     display: none;
   }
 
+  /* The sheet itself scrolls, so the entry needs no cap of its own. */
   .definition__sections {
     max-height: none;
   }

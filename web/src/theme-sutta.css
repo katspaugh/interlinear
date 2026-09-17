@@ -1146,11 +1146,16 @@
 /* Dictionary                                                          */
 /* ------------------------------------------------------------------ */
 
-.theme-sutta .reader__sidebar {
-  position: sticky;
-  top: calc(var(--header-h) + 41px);
-  min-width: 0;
-  padding: 56px 0 0;
+/* Desktop only: below 900px the dictionary is a sheet fixed to the top of
+ * the screen (styles.css), and an unscoped `position: sticky` here would
+ * outrank that rule on specificity and drop the column back into the flow. */
+@media not all and (max-width: 900px) {
+  .theme-sutta .reader__sidebar {
+    position: sticky;
+    top: calc(var(--header-h) + 41px);
+    min-width: 0;
+    padding: 56px 0 0;
+  }
 }
 
 .theme-sutta .reader__sidebar-inner {
@@ -1429,8 +1434,9 @@
   }
 }
 
-/* Below this the dictionary is a slide-in overlay (styles.css), so it leaves
- * the grid entirely and the text takes the full width. */
+/* Below this the dictionary is a sheet fixed to the top of the screen
+ * (styles.css), so it leaves the grid entirely and the text takes the full
+ * width. */
 @media (max-width: 900px) {
   .theme-sutta .reader {
     grid-template-columns: minmax(0, 1fr);
@@ -1442,13 +1448,20 @@
     width: 100%;
   }
 
+  /* Clear the sticky header and the progress hairline riding under it. */
   .theme-sutta .reader__sidebar {
+    --dict-top: calc(var(--header-h) + 2px);
+    min-width: 0;
     background-color: var(--bg);
-    padding: 30px 16px;
+    padding: 16px;
   }
 
   .theme-sutta .reader__sidebar-inner {
     box-shadow: none;
+  }
+
+  .theme-sutta .definition__sections {
+    max-height: none;
   }
 }
 
