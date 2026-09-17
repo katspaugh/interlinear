@@ -1,0 +1,1899 @@
+/* sutta.stream — design system v1.
+ *
+ * "A reading surface, not an app." Warm paper ground, one hairline weight,
+ * one accent, and type that carries the hierarchy. Chrome stays quiet so the
+ * Pali can be loud.
+ *
+ * Everything here is scoped to :root.theme-sutta (set from the hostname, see
+ * site.ts) so interlinear.cc keeps the original blue design untouched. The
+ * four rules the rest of this file follows:
+ *
+ *   1. Pali is the largest thing on screen. Glosses, labels and controls all
+ *      sit below it in size and contrast — never the reverse.
+ *   2. Hairlines, not boxes. A single 1px rule separates things; fills and
+ *      shadows are reserved for paper cards.
+ *   3. One accent, used sparingly. Saffron marks the current thing and the
+ *      one action.
+ *   4. The page should empty over time. As words are learned their glosses
+ *      fade; the interface is designed to be outgrown.
+ *
+ * The browsable version of all this is /design (pages/DesignSystem.tsx).
+ */
+
+/* ------------------------------------------------------------------ */
+/* Fonts                                                               */
+/* ------------------------------------------------------------------ */
+
+/* Newsreader (everything read) and Sora (everything clicked), self-hosted:
+ * no third-party request, and the latin-ext subset carries the full Pali
+ * diacritic range (U+1E00–1E9F: ṃ ṭ ḷ ḍ ṅ ṇ, plus ā ī ū ñ in U+0100–017F).
+ * Both are variable fonts, one file per subset per style — the weight axis
+ * covers the whole range this design uses. SIL Open Font License 1.1. */
+
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/newsreader-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/newsreader-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Newsreader';
+  font-style: italic;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/newsreader-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Newsreader';
+  font-style: italic;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/newsreader-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Sora';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('/fonts/sora-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Sora';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('/fonts/sora-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tokens                                                              */
+/* ------------------------------------------------------------------ */
+
+/* :root.theme-sutta, not .theme-sutta: two class-level token blocks would
+ * depend on file order, and this one has to win over styles.css's :root
+ * whichever way the bundler stacks them. */
+:root.theme-sutta {
+  /* Paper · Ink · Saffron */
+  --bg: #efebe3; /* paper — page ground */
+  --chrome: #efebe3; /* header and footer sit on the same paper */
+  --paper: #fbf8f2; /* leaf — raised cards */
+  --paper-fade: rgba(251, 248, 242, 0);
+  --ink: #2b2620; /* primary text */
+  --ink-soft: #584f45; /* lead paragraphs */
+  --ink-body: #3e3730; /* dictionary senses */
+  --muted: #6b6257; /* body, translation */
+  --muted-2: #8d8478; /* subtitles, secondary rows */
+  --gloss: #a39a8c; /* ash — glosses, labels */
+  --faint: #c0b7a7; /* ordinals, counters */
+  --accent: #c58a2e; /* saffron — marks, rules */
+  --accent-strong: #a8672f; /* terracotta — links, actions */
+  --accent-hover: #7d4a1e;
+  --highlight: #f3e6c8; /* selected word */
+  --highlight-edge: #e2cd9e;
+
+  /* Hairlines. Nothing else draws a line. */
+  --rule: #ddd6c9; /* on paper */
+  --rule-card: #e4dccc; /* card edges */
+  --rule-inner: #eee7d9; /* internal dividers */
+
+  --row-hover: #f6f2ea;
+  --word-hover: #f4eee1;
+  --seam: #d9c79a; /* the plain morpheme underline */
+  --chip-bg: #f4ecd8;
+  --chip-rule: #e6d8b4;
+  --quote-rule: #e4d9bf;
+
+  --danger: #a3352c;
+  --form-bg: #fbf8f2;
+
+  /* Familiar words lose their glosses, one step at a time, until the last
+   * step dissolves them completely — rule 4. Hovering still peeks. */
+  --gloss-1: #b7ae9f;
+  --gloss-2: #c9c1b2;
+  --gloss-3: #ddd6c8;
+  --gloss-4: transparent;
+
+  /* Newsreader for everything read, Sora for everything clicked. Sora only
+   * at 10–12px, uppercase, .14–.2em tracking — never for prose. */
+  --font-reading: Newsreader, Georgia, 'Times New Roman', serif;
+  --font-ui: Sora, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  /* Radii only. Controls 2px, paper 3px. Nothing is round. */
+  --radius-control: 2px;
+  --radius-paper: 3px;
+
+  /* Sticky offsets are measured off the header, which is a known height:
+   * 14px + 22px cap height + 14px + the 1px hairline. */
+  --header-h: 51px;
+
+  /* Max measure for interlinear text; prose caps at 56–62ch. */
+  --measure: 70ch;
+}
+
+/* ------------------------------------------------------------------ */
+/* Ground                                                              */
+/* ------------------------------------------------------------------ */
+
+.theme-sutta body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-reading);
+  -webkit-font-smoothing: antialiased;
+}
+
+.theme-sutta ::selection {
+  background: #f0dcb4;
+}
+
+.theme-sutta a {
+  color: var(--accent-strong);
+  text-decoration-color: rgba(168, 103, 47, 0.35);
+  text-underline-offset: 3px;
+}
+
+.theme-sutta a:hover {
+  color: var(--accent-hover);
+  text-decoration-color: rgba(125, 74, 30, 0.7);
+}
+
+.theme-sutta .container {
+  max-width: 1080px;
+  padding: 0 32px;
+}
+
+/* The one small-caps label used everywhere: chips, eyebrows, column heads. */
+.theme-sutta .label,
+.theme-sutta .header__nav,
+.theme-sutta .index__collections-label,
+.theme-sutta .index__count,
+.theme-sutta .reader__passages-label,
+.theme-sutta .definition__heading,
+.theme-sutta .definition__morphs-heading {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gloss);
+}
+
+.theme-sutta .btn {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-radius: var(--radius-control);
+  padding: 13px 18px;
+}
+
+.theme-sutta .btn_transparent-blue {
+  background: transparent;
+  border: 1px solid rgba(168, 103, 47, 0.4);
+  color: var(--accent-strong);
+}
+
+.theme-sutta .btn_transparent-blue:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--paper);
+}
+
+/* Badges: one accented, one quiet, never both on the same row. */
+.theme-sutta .badge {
+  font: 500 10px/1 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-radius: var(--radius-control);
+  padding: 5px 8px;
+  white-space: nowrap;
+}
+
+.theme-sutta .badge_glossed {
+  color: var(--accent-strong);
+  border: 1px solid rgba(168, 103, 47, 0.35);
+}
+
+.theme-sutta .badge_quiet {
+  color: var(--gloss);
+  border: 1px solid var(--rule);
+}
+
+.theme-sutta .badge_read {
+  color: var(--paper);
+  background: var(--accent-strong);
+  border: 1px solid var(--accent-strong);
+}
+
+.theme-sutta .badge_failed {
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+/* A raised leaf: 3px radius, 1px edge, a long soft shadow, and an optional
+ * 64×3px saffron tab at the top-left. Specimens and the dictionary. */
+.theme-sutta .paper {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--rule-card);
+  border-radius: var(--radius-paper);
+  box-shadow:
+    0 1px 0 rgba(43, 38, 32, 0.04),
+    0 18px 40px -28px rgba(43, 38, 32, 0.28);
+}
+
+.theme-sutta .paper_tabbed {
+  position: relative;
+}
+
+.theme-sutta .paper_tabbed::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 56px;
+  width: 64px;
+  height: 3px;
+  background: var(--accent);
+}
+
+.theme-sutta .sk-three-bounce .sk-child {
+  background-color: var(--gloss);
+}
+
+/* ------------------------------------------------------------------ */
+/* Header                                                              */
+/* ------------------------------------------------------------------ */
+
+.theme-sutta .header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
+  border-bottom: 1px solid var(--rule);
+  line-height: normal;
+}
+
+.theme-sutta .header__inner {
+  gap: 24px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.theme-sutta .header__logo {
+  font: 500 22px/1 var(--font-reading);
+  letter-spacing: -0.01em;
+}
+
+.theme-sutta .header__logo a {
+  color: var(--ink);
+}
+
+.theme-sutta .logo__dot {
+  color: var(--accent);
+}
+
+/* The home page keeps its wordmark in the header — the landing leads with
+ * the headline, not with a second, larger logo. */
+.theme-sutta .page_home .header__logo {
+  visibility: visible;
+}
+
+/* The default theme's home page is a photograph behind the chrome;
+ * sutta.stream's ground is paper, all the way down — and the sticky header
+ * has to stay opaque over it. */
+.theme-sutta .page_home,
+.theme-sutta .page_home .header {
+  background-image: none;
+  background-color: var(--bg);
+}
+
+.theme-sutta .header__right {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.theme-sutta .header__nav {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  letter-spacing: 0.14em;
+}
+
+.theme-sutta .header__nav a {
+  color: var(--muted-2);
+  text-decoration: none;
+}
+
+.theme-sutta .header__nav a:hover {
+  color: var(--ink);
+}
+
+.theme-sutta .header__nav a[aria-current='page'] {
+  color: var(--ink);
+}
+
+.theme-sutta .header__status {
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gloss);
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* Footer                                                              */
+/* ------------------------------------------------------------------ */
+
+.theme-sutta .footer {
+  background: var(--bg);
+  border-top: 1px solid var(--rule);
+  margin-top: 96px;
+  padding: 28px 0 40px;
+}
+
+.theme-sutta .footer__inner {
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+
+.theme-sutta .footer p {
+  font: 400 15px/1.6 var(--font-reading);
+  color: var(--muted);
+  max-width: 62ch;
+}
+
+.theme-sutta .footer a {
+  color: var(--accent-strong);
+  text-decoration-color: rgba(168, 103, 47, 0.35);
+}
+
+/* ------------------------------------------------------------------ */
+/* Home — hero                                                         */
+/* ------------------------------------------------------------------ */
+
+.theme-sutta .home {
+  padding-bottom: 20px;
+}
+
+.theme-sutta .hero {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 760px;
+  padding: 104px 0 0;
+}
+
+.theme-sutta .hero__eyebrow {
+  margin: 0;
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.theme-sutta .hero__title {
+  margin: 0;
+  font: 300 clamp(46px, 6.4vw, 86px) / 1.02 var(--font-reading);
+  letter-spacing: -0.025em;
+  text-wrap: pretty;
+}
+
+.theme-sutta .hero__title em {
+  font-style: italic;
+  color: var(--muted-2);
+}
+
+.theme-sutta .home__hero {
+  padding: 0;
+  margin: 0;
+  max-width: 56ch;
+  text-shadow: none;
+}
+
+.theme-sutta .home__hero p {
+  margin: 0;
+  font: 300 20px/1.6 var(--font-reading);
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+/* The two things the product does, marked in the lead the way the accent is
+ * used everywhere else: once each, under the words that name them. */
+.theme-sutta .home__hero b {
+  font-weight: inherit;
+  color: var(--ink);
+  border-bottom: 1.5px solid var(--accent);
+}
+
+/* ------------------------------------------------------------------ */
+/* Home — verse specimen                                               */
+/* ------------------------------------------------------------------ */
+
+.theme-sutta .epigraph {
+  display: block;
+  max-width: none;
+  margin: 64px 0 0;
+  padding: 56px 56px 40px;
+  background: var(--paper);
+  border: 1px solid var(--rule-card);
+  border-radius: var(--radius-paper);
+  box-shadow:
+    0 1px 0 rgba(43, 38, 32, 0.04),
+    0 18px 40px -28px rgba(43, 38, 32, 0.28);
+  color: var(--ink);
+  font-family: var(--font-reading);
+  font-size: inherit;
+  text-align: center;
+  transition: box-shadow 200ms ease;
+}
+
+.theme-sutta .epigraph:hover {
+  transform: none;
+  box-shadow:
+    0 1px 0 rgba(43, 38, 32, 0.04),
+    0 22px 46px -26px rgba(43, 38, 32, 0.36);
+}
+
+.theme-sutta .epigraph .words {
+  text-align: center;
+  font-size: clamp(24px, 2.8vw, 36px);
+  line-height: 1.3;
+}
+
+.theme-sutta .epigraph .word {
+  margin: 0 9px 4px;
+  padding: 0;
+}
+
+.theme-sutta .epigraph .word__gloss {
+  letter-spacing: 0.06em;
+}
+
+.theme-sutta .epigraph__translation {
+  margin: 22px auto 0;
+  max-width: 52ch;
+  font: italic 300 19px/1.65 var(--font-reading);
+  color: var(--muted);
+}
+
+.theme-sutta .epigraph__source {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-top: 28px;
+  font-style: normal;
+}
+
+.theme-sutta .epigraph__ref {
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gloss);
+}
+
+.theme-sutta .epigraph__cta {
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+  border-bottom: 1px solid rgba(168, 103, 47, 0.4);
+  padding-bottom: 3px;
+}
+
+.theme-sutta .epigraph:hover .epigraph__cta {
+  color: var(--accent-hover);
+  border-bottom-color: var(--accent-hover);
+}
+
+/* ------------------------------------------------------------------ */
+/* Home — the index                                                    */
+/* ------------------------------------------------------------------ */
+
+.theme-sutta .index {
+  display: grid;
+  grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+  margin-top: 64px;
+}
+
+.theme-sutta .index__side {
+  position: sticky;
+  top: calc(var(--header-h) + 45px);
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.theme-sutta .index__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--paper);
+  border: 1px solid var(--rule-card);
+  border-radius: var(--radius-control);
+  padding: 12px 14px;
+}
+
+/* The search glyph is one hairline circle — the magnifier without its
+ * handle, which at 11px reads as noise. */
+.theme-sutta .index__search::before {
+  content: '';
+  flex: none;
+  display: block;
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--gloss);
+  border-radius: 50%;
+}
+
+.theme-sutta .index__search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: 400 15px/1 var(--font-reading);
+  color: var(--ink);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.theme-sutta .index__search input::placeholder {
+  color: var(--gloss);
+}
+
+.theme-sutta .index__search input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.theme-sutta .index__collections {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.theme-sutta .index__collections-label {
+  padding-bottom: 12px;
+  letter-spacing: 0.16em;
+}
+
+.theme-sutta .index__collection {
+  font: 400 17px/1.9 var(--font-reading);
+  color: var(--muted-2);
+  background: none;
+  border: 0;
+  border-left: 2px solid transparent;
+  padding: 0 0 0 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.theme-sutta .index__collection:hover {
+  color: var(--ink);
+}
+
+.theme-sutta .index__collection_current {
+  color: var(--ink);
+  border-left-color: var(--accent);
+  padding-left: 12px;
+}
+
+.theme-sutta .index__collection-count {
+  font: 500 11px/1 var(--font-ui);
+  color: var(--faint);
+  margin-left: 8px;
+}
+
+.theme-sutta .index__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.theme-sutta .index__head h2 {
+  margin: 0;
+  font: 400 30px/1 var(--font-reading);
+  letter-spacing: -0.01em;
+}
+
+.theme-sutta .index__count {
+  letter-spacing: 0.14em;
+}
+
+/* A hairline index: number, title over its English, status. No boxes. */
+.theme-sutta .index__row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 20px;
+  padding: 20px 12px 20px 0;
+  border-bottom: 1px solid var(--rule-card);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.theme-sutta .index__row:hover {
+  background: var(--row-hover);
+  color: var(--ink);
+}
+
+.theme-sutta .index__num {
+  font: 500 12px/1 var(--font-ui);
+  color: var(--faint);
+}
+
+.theme-sutta .index__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.theme-sutta .index__orig {
+  font: 400 23px/1.2 var(--font-reading);
+}
+
+.theme-sutta .index__en {
+  font: 400 16px/1.2 var(--font-reading);
+  color: var(--muted-2);
+}
+
+.theme-sutta .index__meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.theme-sutta .index__empty {
+  margin: 28px 0 0;
+  font: italic 300 18px/1.6 var(--font-reading);
+  color: var(--gloss);
+  text-shadow: none;
+}
+
+.theme-sutta .home__more,
+.theme-sutta .home__error {
+  text-shadow: none;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* Reader                                                              */
+/* ------------------------------------------------------------------ */
+
+/* Scroll progress, a saffron hairline riding just under the header. */
+.theme-sutta .reader__progress {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 19;
+  height: 2px;
+  background: var(--rule-card);
+}
+
+.theme-sutta .reader__progress-bar {
+  height: 2px;
+  background: var(--accent);
+  transition: width 0.2s;
+}
+
+/* Two columns: the measured text, and the dictionary that fills as words
+ * are tapped. (Three columns — nav, text, dictionary — squeezed the measure
+ * down to two or three words a line.) */
+.theme-sutta .reader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+  gap: 56px;
+  align-items: start;
+  max-width: 1560px;
+  padding-top: 0;
+}
+
+.theme-sutta .reader__text {
+  flex: none;
+  min-width: 0;
+  background: none;
+  border-radius: 0;
+  padding: 56px 0 0;
+  font-family: var(--font-reading);
+  font-size: 26px;
+  color: var(--ink);
+}
+
+/* Passage index: every chunk of the text, as a strip of quiet chips. */
+.theme-sutta .reader__passages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding-bottom: 22px;
+}
+
+.theme-sutta .reader__passages-label {
+  letter-spacing: 0.18em;
+  font-size: 10px;
+}
+
+.theme-sutta .reader__passage-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.theme-sutta .reader__passage {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.theme-sutta .reader__passage:hover {
+  background: var(--word-hover);
+}
+
+.theme-sutta .reader__passage_current {
+  background: var(--highlight);
+  box-shadow: inset 0 0 0 1px var(--highlight-edge);
+}
+
+.theme-sutta .reader__passage-n {
+  font: 500 11px/1 var(--font-ui);
+  color: var(--faint);
+}
+
+.theme-sutta .reader__passage-label {
+  font: 400 15px/1.2 var(--font-reading);
+  color: var(--muted);
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-sutta .reader__progress-note {
+  margin-left: auto;
+  font: 400 15px/1.2 var(--font-reading);
+  color: var(--gloss);
+}
+
+/* Controls sit above the text, not floated beside the heading. */
+.theme-sutta .reader__controls {
+  float: none;
+  justify-content: flex-start;
+  gap: 10px;
+  padding-bottom: 36px;
+  font-family: var(--font-ui);
+}
+
+.theme-sutta .reader__seg {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+}
+
+.theme-sutta .reader__seg button {
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 9px 14px;
+  background: transparent;
+  color: var(--muted-2);
+}
+
+.theme-sutta .reader__seg button + button {
+  border-left: 1px solid var(--rule);
+}
+
+.theme-sutta .reader__seg button:hover {
+  color: var(--ink);
+}
+
+.theme-sutta .reader__seg button[aria-pressed='true'] {
+  background: var(--ink);
+  color: #f6f2e8;
+}
+
+.theme-sutta .reader__toggles {
+  gap: 10px;
+}
+
+/* The toggles read as chips but stay real checkboxes: the input is only
+ * visually hidden, so it still focuses, announces and responds to space. */
+.theme-sutta .reader__toggle {
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 9px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  color: var(--muted-2);
+}
+
+.theme-sutta .reader__toggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.theme-sutta .reader__toggle:hover {
+  color: var(--ink);
+}
+
+.theme-sutta .reader__toggle:has(input:checked) {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #f6f2e8;
+}
+
+.theme-sutta .reader__toggle:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.theme-sutta .reader__delete {
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gloss);
+}
+
+/* Text head */
+.theme-sutta .reader__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0 0 48px;
+  border-left: 0;
+  border-bottom: 1px solid var(--rule);
+  max-width: var(--measure);
+}
+
+.theme-sutta .reader__source {
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+  font-style: normal;
+}
+
+.theme-sutta .reader__title {
+  margin: 0;
+  font: 300 clamp(40px, 5vw, 64px) / 1.05 var(--font-reading);
+  letter-spacing: -0.02em;
+}
+
+.theme-sutta .reader__subtitle {
+  font: italic 300 24px/1.3 var(--font-reading);
+  color: var(--muted-2);
+}
+
+.theme-sutta .reader__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  padding-top: 14px;
+}
+
+.theme-sutta .reader__credit,
+.theme-sutta .reader__sclink {
+  display: inline;
+  margin: 0;
+  font: 400 15px/1.5 var(--font-reading);
+  color: var(--muted);
+}
+
+.theme-sutta .reader__sclink a {
+  color: var(--accent-strong);
+}
+
+.theme-sutta .reader__glossing,
+.theme-sutta .reader__failed {
+  max-width: var(--measure);
+  margin: 24px 0 0;
+  font: italic 300 18px/1.6 var(--font-reading);
+  color: var(--gloss);
+}
+
+.theme-sutta .reader__failed {
+  color: var(--danger);
+}
+
+/* Interlinear body: 44px between passages, 14px within one. */
+.theme-sutta .reader__chunks {
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+  padding: 56px 0 0;
+  max-width: var(--measure);
+}
+
+.theme-sutta .reader__chunk {
+  margin: 0;
+  scroll-margin-top: calc(var(--header-h) + 24px);
+}
+
+.theme-sutta .reader__raw {
+  color: var(--gloss);
+  font-size: 22px;
+}
+
+.theme-sutta .reader__translation {
+  max-width: 58ch;
+  margin: 14px 0 0;
+  padding-left: 18px;
+  border-left: 2px solid var(--quote-rule);
+  font: italic 300 19px/1.65 var(--font-reading);
+  color: var(--muted);
+}
+
+.theme-sutta .reader__nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px 24px;
+  max-width: var(--measure);
+  margin-top: 44px;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+}
+
+.theme-sutta .reader__nav a {
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.theme-sutta .reader__nav-index {
+  color: var(--muted-2);
+}
+
+.theme-sutta .reader__nav-index:hover {
+  color: var(--ink);
+}
+
+.theme-sutta .reader__nav-next {
+  flex: 1;
+  min-width: 0;
+  color: var(--accent-strong);
+  text-align: right;
+}
+
+.theme-sutta .reader__error,
+.theme-sutta .reader__missing {
+  font: 300 20px/1.6 var(--font-reading);
+  color: var(--muted);
+  padding: 96px 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* The interlinear word — the core unit                                */
+/* ------------------------------------------------------------------ */
+
+/* Ragged right: justification opens rivers between words that already carry
+ * their own glosses. */
+.theme-sutta .words {
+  text-align: left;
+}
+
+/* The bottom margin is what separates one wrapped line of glossed words
+ * from the next: an inline-block's margin box is what sizes the line box,
+ * and a bare 6px leaves the next line's glosses against these seams. */
+.theme-sutta .word {
+  margin: 0 7px 10px 0;
+  padding: 2px 3px;
+  border-radius: var(--radius-paper);
+  line-height: 1.2;
+}
+
+/* The gloss sits above at 11px so the eye lands on the Pali first. No
+ * colour here on purpose: it comes from --gloss / --gloss-1..4 through
+ * .word_occur_N, which carries the same specificity as this rule and would
+ * lose to it — and with it the whole fade ladder. */
+.theme-sutta .word__gloss {
+  margin-bottom: 3px;
+  min-height: 13px;
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.04em;
+  transition: color 0.3s;
+}
+
+.theme-sutta .word__text {
+  font-weight: 400;
+}
+
+.theme-sutta .word_clickable:hover {
+  background: var(--word-hover);
+}
+
+.theme-sutta .word_selected,
+.theme-sutta .word_clickable.word_selected:hover {
+  background: var(--highlight);
+  box-shadow: inset 0 0 0 1px var(--highlight-edge);
+}
+
+.theme-sutta .word_clickable:hover .word__gloss,
+.theme-sutta .word_selected .word__gloss {
+  color: var(--muted);
+}
+
+/* Morpheme seams keep their four semantic colours — a prefix is the same
+ * colour here as on interlinear.cc, so recognition carries across. Words
+ * without a segmentation get the plain saffron-grey underline instead. */
+.theme-sutta .word__morph {
+  transition: border-color 0.3s;
+}
+
+/* Words the segmenter could not split still take an underline while
+ * "Morphemes" is on — the design's single 2px seam — so the line reads
+ * evenly instead of alternating underlined and bare words. */
+.theme-sutta .words_morphs .word__text:not(:has(.word__morph)) {
+  border-bottom: 2px solid var(--seam);
+  padding-bottom: 1px;
+  transition: border-color 0.3s;
+}
+
+/* Rule 4, at the level of one word: a word marked known loses its gloss and
+ * its seams together, in one transition, and gets both back on hover. */
+.theme-sutta .word_known .word__morph,
+.theme-sutta .words_morphs .word_known .word__text {
+  border-bottom-color: transparent;
+}
+
+.theme-sutta .word_known:hover .word__morph_prefix {
+  border-bottom-color: var(--m-prefix);
+}
+
+.theme-sutta .word_known:hover .word__morph_root {
+  border-bottom-color: var(--m-root);
+}
+
+.theme-sutta .word_known:hover .word__morph_stem {
+  border-bottom-color: var(--m-stem);
+}
+
+.theme-sutta .word_known:hover .word__morph_ending {
+  border-bottom-color: var(--m-ending);
+}
+
+.theme-sutta .words_morphs .word_known:hover .word__text {
+  border-bottom-color: var(--seam);
+}
+
+.theme-sutta .word__sandhi {
+  color: var(--accent);
+}
+
+/* ------------------------------------------------------------------ */
+/* Dictionary                                                          */
+/* ------------------------------------------------------------------ */
+
+.theme-sutta .reader__sidebar {
+  position: sticky;
+  top: calc(var(--header-h) + 41px);
+  min-width: 0;
+  padding: 56px 0 0;
+}
+
+.theme-sutta .reader__sidebar-inner {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--rule-card);
+  border-radius: var(--radius-paper);
+  box-shadow: 0 18px 40px -32px rgba(43, 38, 32, 0.3);
+}
+
+.theme-sutta .definition__heading {
+  margin: 0;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--rule-inner);
+  color: var(--gloss);
+}
+
+/* The dismiss glyph is part of the card header here, not a mobile-only
+ * overlay button. */
+.theme-sutta .reader__sidebar-close {
+  display: block;
+  right: 18px;
+  top: 13px;
+  font: 400 18px/1 var(--font-reading);
+  color: var(--gloss);
+}
+
+.theme-sutta .reader__sidebar-close:hover {
+  color: var(--ink);
+}
+
+.theme-sutta .reader__sidebar-hint {
+  display: block;
+  padding: 40px 22px;
+  margin: 0;
+  text-align: center;
+  font: italic 300 18px/1.6 var(--font-reading);
+  color: var(--gloss);
+  opacity: 1;
+}
+
+.theme-sutta .definition__panel {
+  background: none;
+  border-radius: 0;
+  padding: 24px 22px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Six blocks, fixed order: inflected form, lemma, senses, built from,
+ * etymology, mark as known. */
+.theme-sutta .definition__term {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0 0 0 14px;
+  border-left: 2px solid var(--accent);
+  font-size: inherit;
+}
+
+.theme-sutta .definition__term-text {
+  font: 400 26px/1.15 var(--font-reading);
+}
+
+.theme-sutta .definition__term-note {
+  font: italic 300 19px/1.3 var(--font-reading);
+  color: var(--muted-2);
+}
+
+.theme-sutta .definition__sections {
+  font-size: inherit;
+  max-height: 70vh;
+}
+
+.theme-sutta .definition__title {
+  margin: 0;
+  font: 500 19px/1.2 var(--font-reading);
+  letter-spacing: 0.01em;
+}
+
+.theme-sutta .definition__grammar {
+  margin: 5px 0 0;
+  font: italic 300 16px/1.45 var(--font-reading);
+  color: var(--muted-2);
+}
+
+.theme-sutta .definition__meanings {
+  list-style: none;
+  counter-reset: sense;
+  padding: 0;
+  margin: 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.theme-sutta .definition__meanings li {
+  counter-increment: sense;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  margin: 0;
+  font: 400 16px/1.5 var(--font-reading);
+  color: var(--ink-body);
+}
+
+.theme-sutta .definition__meanings li::before {
+  content: counter(sense) '.';
+  font: 500 11px/1.8 var(--font-ui);
+  color: var(--faint);
+}
+
+.theme-sutta .definition__morphs {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 20px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule-inner);
+}
+
+.theme-sutta .definition__morphs-heading {
+  margin: 0;
+  font-size: 10px;
+}
+
+.theme-sutta .definition__morph {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  margin: 0;
+}
+
+.theme-sutta .definition__morph-chip {
+  font: 400 17px/1 var(--font-reading);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-rule);
+  border-bottom: 2px solid var(--m-root);
+  border-radius: var(--radius-control);
+  padding: 5px 8px;
+}
+
+/* Re-stated at this specificity for the same reason. */
+.theme-sutta .definition__morph-chip_prefix {
+  border-bottom-color: var(--m-prefix);
+}
+
+.theme-sutta .definition__morph-chip_stem {
+  border-bottom-color: var(--m-stem);
+}
+
+.theme-sutta .definition__morph-chip_ending {
+  border-bottom-color: var(--m-ending);
+}
+
+.theme-sutta .definition__morph-kind {
+  margin-bottom: 4px;
+  font: 500 10px/1.2 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.theme-sutta .definition__morph-body {
+  font: 400 15px/1.5 var(--font-reading);
+  color: var(--ink-soft);
+}
+
+/* Analysis and etymology: prose, not a table, each under its own label. */
+.theme-sutta .definition__entry > p:not(.definition__grammar) {
+  margin: 20px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule-inner);
+  font: 400 15px/1.6 var(--font-reading);
+  color: var(--ink-soft);
+}
+
+.theme-sutta .definition__entry > p b {
+  /* The stop that separates label from sentence inline is noise once the
+     label is its own line. */
+  display: block;
+  margin-bottom: 6px;
+  font: 500 10px/1 var(--font-ui);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gloss);
+}
+
+.theme-sutta .definition__stop {
+  display: none;
+}
+
+.theme-sutta .definition__source {
+  margin-top: 16px;
+  font: 400 14px/1.5 var(--font-reading);
+  color: var(--gloss);
+}
+
+/* The one action in the panel, with a line explaining what it does. */
+.theme-sutta .definition__known {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding-top: 8px;
+}
+
+.theme-sutta .definition__known .btn {
+  padding: 13px;
+  width: 100%;
+}
+
+.theme-sutta .definition__known-btn_active {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--paper);
+}
+
+.theme-sutta .definition__known-hint {
+  margin: 0;
+  font: 400 14px/1.5 var(--font-reading);
+  color: var(--gloss);
+}
+
+.theme-sutta .definition__error {
+  color: var(--danger);
+  font: 400 15px/1.5 var(--font-reading);
+}
+
+/* ------------------------------------------------------------------ */
+/* Admin (owner-only text form)                                        */
+/* ------------------------------------------------------------------ */
+
+.theme-sutta .add-form {
+  background: var(--paper);
+  border: 1px solid var(--rule-card);
+  border-radius: var(--radius-paper);
+  color: var(--ink);
+  margin-top: 64px;
+}
+
+.theme-sutta .add-form__heading {
+  font: 400 24px/1.2 var(--font-reading);
+}
+
+.theme-sutta .add-form label {
+  font: 400 15px/1.4 var(--font-reading);
+  color: var(--muted);
+}
+
+.theme-sutta .add-form input,
+.theme-sutta .add-form select,
+.theme-sutta .add-form textarea {
+  border: 1px solid var(--rule-card);
+  border-radius: var(--radius-control);
+  background: var(--bg);
+  font-family: var(--font-reading);
+}
+
+/* ------------------------------------------------------------------ */
+/* Narrow screens                                                      */
+/* ------------------------------------------------------------------ */
+
+/* The dictionary keeps its column as long as the text keeps a readable
+ * measure; the two tighten together before they separate. */
+@media (max-width: 1200px) {
+  .theme-sutta .reader {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+    gap: 32px;
+  }
+
+  .theme-sutta .reader__text {
+    font-size: 23px;
+  }
+}
+
+/* Below this the dictionary is a slide-in overlay (styles.css), so it leaves
+ * the grid entirely and the text takes the full width. */
+@media (max-width: 900px) {
+  .theme-sutta .reader {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .theme-sutta .reader__text {
+    margin: 0;
+    width: 100%;
+  }
+
+  .theme-sutta .reader__sidebar {
+    background-color: var(--bg);
+    padding: 30px 16px;
+  }
+
+  .theme-sutta .reader__sidebar-inner {
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .theme-sutta .index {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+
+  .theme-sutta .index__side {
+    position: static;
+  }
+
+  .theme-sutta .index__collections {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+  }
+
+  .theme-sutta .index__collection,
+  .theme-sutta .index__collection_current {
+    border-left: 0;
+    padding-left: 0;
+    border-bottom: 2px solid transparent;
+  }
+
+  .theme-sutta .index__collection_current {
+    border-bottom-color: var(--accent);
+  }
+}
+
+@media (max-width: 640px) {
+  .theme-sutta .container {
+    padding: 0 16px;
+  }
+
+  .theme-sutta .hero {
+    padding-top: 56px;
+  }
+
+  .theme-sutta .epigraph {
+    margin-top: 44px;
+    padding: 36px 24px 28px;
+  }
+
+  .theme-sutta .paper_tabbed::before {
+    left: 24px;
+  }
+
+  .theme-sutta .index__row {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 4px 14px;
+  }
+
+  .theme-sutta .index__meta {
+    grid-column: 2;
+  }
+
+  .theme-sutta .reader__text {
+    padding-top: 32px;
+    font-size: 21px;
+  }
+
+  .theme-sutta .reader__progress-note {
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-sutta .reader__progress-bar,
+  .theme-sutta .word__gloss,
+  .theme-sutta .word__morph,
+  .theme-sutta .epigraph {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* The style guide itself (/design)                                    */
+/* ------------------------------------------------------------------ */
+
+/* Layout for pages/DesignSystem.tsx. Everything it documents is drawn with
+ * the classes above; these only arrange the specimens on the page. */
+
+.theme-sutta .ds {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.theme-sutta .ds__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 32px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.theme-sutta .ds__body {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 88px 32px 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 96px;
+}
+
+.theme-sutta .ds__lede {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 64ch;
+}
+
+.theme-sutta .ds__lede .hero__title {
+  font-size: clamp(42px, 5.6vw, 72px);
+  line-height: 1.03;
+}
+
+.theme-sutta .ds__lead {
+  margin: 0;
+  max-width: 56ch;
+  font: 300 20px/1.6 var(--font-reading);
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.theme-sutta .ds__section {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.theme-sutta .ds__section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.theme-sutta .ds__section-head h2 {
+  margin: 0;
+  font: 400 30px/1 var(--font-reading);
+  letter-spacing: -0.01em;
+}
+
+.theme-sutta .ds__aside,
+.theme-sutta .ds__label {
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gloss);
+}
+
+.theme-sutta .ds__label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+}
+
+.theme-sutta .ds__label_spaced {
+  padding-top: 8px;
+}
+
+.theme-sutta .ds__note {
+  display: block;
+  font: 400 16px/1.55 var(--font-reading);
+  color: var(--muted);
+}
+
+.theme-sutta .ds__note_wide {
+  max-width: 62ch;
+  margin: 0;
+}
+
+.theme-sutta .ds__note b {
+  font-weight: inherit;
+  color: var(--ink);
+}
+
+.theme-sutta .ds__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 36px;
+  align-items: start;
+}
+
+.theme-sutta .ds__grid_wide {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.theme-sutta .ds__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.theme-sutta .ds__stack_tight {
+  gap: 6px;
+}
+
+.theme-sutta .ds__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.theme-sutta .ds__row_baseline {
+  gap: 22px;
+  align-items: baseline;
+}
+
+.theme-sutta .ds__ordinal {
+  font: 500 11px/1.4 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Principles */
+.theme-sutta .ds__principle {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.theme-sutta .ds__principle-title {
+  font: 400 21px/1.25 var(--font-reading);
+}
+
+/* Color */
+.theme-sutta .ds__swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 2px;
+}
+
+.theme-sutta .ds__swatch {
+  height: 120px;
+}
+
+.theme-sutta .ds__swatch_ruled {
+  border: 1px solid var(--rule);
+}
+
+.theme-sutta .ds__swatch-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 2px;
+}
+
+.theme-sutta .ds__swatch-name {
+  font: 500 11px/1 var(--font-ui);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.theme-sutta .ds__swatch-body .ds__note {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--muted-2);
+}
+
+/* Type */
+.theme-sutta .ds__family {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--paper);
+  border: 1px solid var(--rule-card);
+  padding: 26px;
+}
+
+.theme-sutta .ds__family-sample {
+  font: 300 52px/1.05 var(--font-reading);
+  letter-spacing: -0.02em;
+}
+
+.theme-sutta .ds__family-sample_ui {
+  font: 500 40px/1.1 var(--font-ui);
+  letter-spacing: -0.01em;
+}
+
+.theme-sutta .ds__scale {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--rule-card);
+}
+
+.theme-sutta .ds__scale-row {
+  display: grid;
+  grid-template-columns: minmax(0, 180px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: baseline;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--rule-inner);
+}
+
+.theme-sutta .ds__scale-label {
+  font: 500 11px/1.5 var(--font-ui);
+  letter-spacing: 0.1em;
+  color: var(--muted-2);
+}
+
+/* Interlinear word states */
+.theme-sutta .ds__specimen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 48px;
+  align-items: flex-end;
+  background: var(--paper);
+  border: 1px solid var(--rule-card);
+  padding: 40px 36px;
+}
+
+.theme-sutta .ds__word {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 34px;
+}
+
+.theme-sutta .ds__word .words {
+  display: block;
+}
+
+.theme-sutta .ds__word .word {
+  margin: 0;
+}
+
+.theme-sutta .ds__word_hover {
+  background: var(--word-hover);
+}
+
+.theme-sutta .ds__word-label {
+  font: 500 10px/1.8 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* Surfaces */
+.theme-sutta .ds__paper {
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.theme-sutta .ds__paper.paper_tabbed::before {
+  left: 28px;
+}
+
+.theme-sutta .ds__paper-title {
+  font: 400 24px/1.2 var(--font-reading);
+}
+
+.theme-sutta .ds__rows {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--rule);
+  width: 100%;
+}
+
+.theme-sutta .ds__rows .index__row {
+  cursor: default;
+}
+
+.theme-sutta .ds__rows .ds__row_hover {
+  background: var(--row-hover);
+}
+
+/* Dictionary */
+.theme-sutta .ds__card {
+  max-width: 360px;
+  background: var(--paper);
+  border: 1px solid var(--rule-card);
+  border-radius: var(--radius-paper);
+  box-shadow: 0 18px 40px -32px rgba(43, 38, 32, 0.3);
+}
+
+.theme-sutta .ds__steps {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--rule-card);
+}
+
+.theme-sutta .ds__step {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--rule-inner);
+}
+
+.theme-sutta .ds__step-title {
+  display: block;
+  margin-bottom: 3px;
+  font: 400 18px/1.2 var(--font-reading);
+}
+
+.theme-sutta .ds__step .ds__note {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.theme-sutta .ds__step .ds__ordinal {
+  color: var(--faint);
+  letter-spacing: 0;
+}
+
+/* Layout */
+.theme-sutta .ds__measure {
+  font: 400 21px/1.2 var(--font-reading);
+}
+
+.theme-sutta .ds__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+}
+
+.theme-sutta .ds__foot-line {
+  font: italic 300 18px/1.5 var(--font-reading);
+  color: var(--muted-2);
+}
+
+@media (max-width: 640px) {
+  .theme-sutta .ds__header {
+    padding: 14px 16px;
+  }
+
+  .theme-sutta .ds__body {
+    padding: 48px 16px 88px;
+    gap: 64px;
+  }
+
+  .theme-sutta .ds__scale-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+}

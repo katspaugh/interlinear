@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useConnectionStatus } from '@intenteffect/react'
 import { site } from './site.js'
 
@@ -71,7 +71,18 @@ export function App() {
               <Logo />
             </Link>
           </h1>
-          {status !== 'live' && <span className="header__status">{status}…</span>}
+          <div className="header__right">
+            {/* One destination, because there is one: the index. (The
+                prototype's "Read" and "About" have nothing behind them.) */}
+            {site.id === 'sutta' && (
+              <nav className="header__nav">
+                <NavLink to="/" end>
+                  Index
+                </NavLink>
+              </nav>
+            )}
+            {status !== 'live' && <span className="header__status">{status}…</span>}
+          </div>
         </div>
       </header>
 
@@ -86,6 +97,12 @@ export function App() {
             {/* Plain HTML, no JavaScript — for Kindles and other e-readers,
                 whose browsers cannot run this app. */}
             <a href="/lite">Lite version for e-readers</a>
+            {site.id === 'sutta' && (
+              <>
+                {' · '}
+                <Link to="/design">Design system</Link>
+              </>
+            )}
           </p>
           {site.id === 'interlinear' && (
             <a

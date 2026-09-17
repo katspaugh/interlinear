@@ -30,7 +30,15 @@ export function Words(props: {
   useWordKnowledge()
   const seen = new Map<string, number>()
   return (
-    <div className={`words ${glossMode === 'off' ? 'words_hide-glosses' : ''}`}>
+    <div
+      className={[
+        'words',
+        glossMode === 'off' ? 'words_hide-glosses' : '',
+        props.showMorphs ? 'words_morphs' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       {props.words.map((word, i) => {
         const key = normalizeWord(word.w)
         const occur = seen.get(key) ?? 0

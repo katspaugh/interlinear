@@ -24,30 +24,21 @@ const EPIGRAPH: Word[] = [
   { w: 'sāsanaṃ.', g: 'the teaching' },
 ]
 
+/** The verse specimen: a raised leaf with the saffron tab, carrying one
+ * stanza set exactly the way the reader sets a text. */
 function Epigraph() {
   return (
-    <Link to="/text/ovada-patimokkha" className="epigraph">
+    <Link to="/text/ovada-patimokkha" className="epigraph paper_tabbed">
       <Words words={EPIGRAPH} />
       <p className="epigraph__translation">
         Not to do any evil, to cultivate the wholesome, to purify one’s own
         mind — this is the teaching of the Buddhas.
       </p>
-      <cite className="epigraph__source">Dhammapada 183 — read it →</cite>
+      <cite className="epigraph__source">
+        <span className="epigraph__ref">Dhammapada 183</span>
+        <span className="epigraph__cta">Read it →</span>
+      </cite>
     </Link>
-  )
-}
-
-function Waves() {
-  return (
-    <svg className="home__waves" viewBox="0 0 80 14" aria-hidden="true">
-      <path
-        d="M4 8c8-6 16 6 24 0s16 6 24 0 16 6 24 0"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-    </svg>
   )
 }
 
@@ -84,6 +75,7 @@ export function Home() {
   const [visibleCount, setVisibleCount] = useState(LIBRARY_BATCH)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const searching = query.trim() !== ''
+  const sutta = site.id === 'sutta'
 
   // A search reaches past the home-page kind caps (interlinear.cc features
   // only a taste of the suttas, but "dhammapada" should still find them
@@ -96,9 +88,10 @@ export function Home() {
         )
       : []
 
-  // Infinite loading: render the listing in windows, growing the window when
-  // the sentinel below it nears the viewport — sutta.stream carries hundreds
-  // of suttas, too many to render up front.
+  // Infinite loading for the card grid: render the listing in windows,
+  // growing the window when the sentinel below it nears the viewport. The
+  // sutta.stream index windows inside the selected collection instead, so it
+  // takes the whole listing and does its own batching.
   const visible = shown.slice(0, visibleCount)
   const hasMore = visibleCount < shown.length
 
@@ -119,62 +112,96 @@ export function Home() {
     return () => observer.disconnect()
   }, [hasMore, visibleCount])
 
-  return (
-    <div className="container home">
-      <div className="home__logo">
-        <Logo />
-      </div>
-      {site.id === 'sutta' && (
-        <p className="home__tagline">The Buddha’s discourses, word by word</p>
-      )}
+  function onQuery(next: string) {
+    setQuery(next)
+    setVisibleCount(LIBRARY_BATCH)
+  }
 
-      {site.id === 'sutta' && <Epigraph />}
-
-      <div className="home__hero">
-        <Hero />
-      </div>
-
-      {site.id === 'sutta' && <Waves />}
-
+  const listing = (
+    <>
       {texts.status === 'loading' && <Spinner />}
       {texts.status === 'error' && (
         <p className="home__error" role="alert">
           ⚠ {texts.error.message}
         </p>
       )}
-      {texts.status === 'ready' && (
-        <>
-          <div className="home__search">
-            <input
-              type="search"
-              className="home__search-input"
-              placeholder={site.searchPlaceholder}
-              aria-label="Search the library"
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value)
-                setVisibleCount(LIBRARY_BATCH)
-              }}
-            />
+      {texts.status === 'ready' &&
+        (sutta ? (
+          // The index carries its own search field: on sutta.stream it sits
+          // in the sticky collection rail, not centred above the listing.
+          <Library
+            texts={shown}
+            query={query}
+            onQuery={onQuery}
+            placeholder={site.searchPlaceholder}
+          />
+        ) : (
+          <>
+            <div className="home__search">
+              <input
+                type="search"
+                className="home__search-input"
+                placeholder={site.searchPlaceholder}
+                aria-label="Search the library"
+                value={query}
+                onChange={(event) => onQuery(event.target.value)}
+              />
+            </div>
+            {shown.length === 0 && searching ? (
+              <p className="home__empty">Nothing matches “{query.trim()}”.</p>
+            ) : (
+              <div className="home__cards">
+                {visible.map((text) => (
+                  <TextCard key={text.id} text={text} />
+                ))}
+              </div>
+            )}
+            {hasMore && (
+              <div className="home__more" ref={sentinelRef}>
+                <Spinner />
+              </div>
+            )}
+          </>
+        ))}
+    </>
+  )
+
+  // sutta.stream leads with the headline and the verse specimen, and keeps
+  // the wordmark up in the header — no second, larger logo beneath it.
+  if (sutta) {
+    return (
+      <div className="container home">
+        <div className="hero">
+          <p className="hero__eyebrow">The Buddha’s discourses, word by word</p>
+          <h1 className="hero__title">
+            Read the suttas in Pali,
+            <br />
+            <em>one word at a time.</em>
+          </h1>
+          <div className="home__hero">
+            <Hero />
           </div>
-          {shown.length === 0 && searching ? (
-            <p className="home__empty">Nothing matches “{query.trim()}”.</p>
-          ) : site.groupedLibrary ? (
-            <Library texts={visible} />
-          ) : (
-            <div className="home__cards">
-              {visible.map((text) => (
-                <TextCard key={text.id} text={text} />
-              ))}
-            </div>
-          )}
-          {hasMore && (
-            <div className="home__more" ref={sentinelRef}>
-              <Spinner />
-            </div>
-          )}
-        </>
-      )}
+        </div>
+
+        <Epigraph />
+        {listing}
+
+        {adminUiVisible() && <AddTextForm />}
+      </div>
+    )
+  }
+
+  return (
+    <div className="container home">
+      <div className="home__logo">
+        <Logo />
+      </div>
+
+      <div className="home__hero">
+        <Hero />
+      </div>
+
+      {listing}
 
       {adminUiVisible() && <AddTextForm />}
     </div>

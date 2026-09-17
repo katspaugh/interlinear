@@ -2,8 +2,8 @@
  *
  * All brand colors live in custom properties on :root; a theme class on
  * <html> (set from the hostname, see site.ts) swaps the palette. The default
- * is the original interlinear blue; .theme-sutta is the warm, earthy skin
- * for sutta.stream. */
+ * is the original interlinear blue; .theme-sutta is the paper-and-saffron
+ * skin for sutta.stream, which lives in its own file (theme-sutta.css). */
 
 :root {
   --bg: #00adea;
@@ -32,23 +32,8 @@
   --m-ending: #c2b59b;
 }
 
-/* sutta.stream: monastic-robe ochres and palm-leaf parchment */
-:root.theme-sutta {
-  --bg: #9a6434;
-  --chrome: #6e441f;
-  --accent: #b45309;
-  --accent-strong: #8a4a12;
-  --highlight: #f0dcb4;
-  --paper: #faf5ea;
-  --paper-fade: rgba(250, 245, 234, 0);
-  --ink: #3b3128;
-  --gloss-1: #c9c2b4;
-  --gloss-2: #d9d2c4;
-  --gloss-3: #e9e2d4;
-  --gloss-4: #faf5ea;
-  --form-bg: rgba(110, 68, 31, 0.88);
-  --font-reading: 'Iowan Old Style', Georgia, 'Times New Roman', serif;
-}
+/* sutta.stream's palette, type and layout live in theme-sutta.css — the
+ * design system v1 skin, scoped entirely to :root.theme-sutta. */
 
 * {
   box-sizing: border-box;
@@ -84,15 +69,6 @@ body {
   background-position: top center;
   background-repeat: repeat-y;
   background-size: cover;
-}
-
-/* Dawn light over ochre: a warm glow from above, dusk pooling below. */
-.theme-sutta .page_home {
-  background-image:
-    radial-gradient(ellipse 120% 60% at 50% -10%, rgba(255, 206, 120, 0.30), transparent 60%),
-    radial-gradient(ellipse 110% 55% at 50% 110%, rgba(56, 30, 9, 0.50), transparent 70%),
-    linear-gradient(165deg, #4e3014 0%, #8a5a2b 55%, #b07a42 100%);
-  background-attachment: fixed;
 }
 
 .page_home .header {
@@ -253,30 +229,6 @@ a {
   text-shadow: 0 0 2px #000;
 }
 
-/* sutta.stream landing: serif wordmark, tagline, hero verse, wave ornament */
-.theme-sutta .header__logo,
-.theme-sutta .home__logo {
-  font-family: var(--font-reading);
-}
-
-.theme-sutta .home__logo {
-  font-size: 54px;
-  letter-spacing: 0.5px;
-  padding-top: 24px;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
-}
-
-.home__tagline {
-  text-align: center;
-  margin: 4px 0 30px;
-  font-size: 13px;
-  font-family: var(--font-ui);
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  opacity: 0.85;
-  text-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
-}
-
 /* Mounted like a work in a gallery: white mat, hairline frame, generous
  * margins, a soft even shadow — no colored trim. */
 .epigraph {
@@ -324,56 +276,6 @@ a {
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--accent-strong);
-}
-
-.home__waves {
-  display: block;
-  width: 96px;
-  margin: 0 auto 30px;
-  color: var(--highlight);
-  opacity: 0.6;
-}
-
-/* Museum air: the landing composition breathes — a taller top margin,
- * wider letter-spacing on the small caption, a quieter ornament — and
- * cards sit flat and square like framed prints. */
-.theme-sutta .home__logo {
-  padding-top: 48px;
-}
-
-.theme-sutta .home__tagline {
-  letter-spacing: 4px;
-  margin: 10px 0 48px;
-  opacity: 0.75;
-}
-
-.theme-sutta .home__hero {
-  max-width: 640px;
-  line-height: 1.7;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-}
-
-.theme-sutta .home__waves {
-  opacity: 0.45;
-}
-
-.theme-sutta .library__collection {
-  letter-spacing: 3px;
-  opacity: 0.75;
-}
-
-.theme-sutta .card {
-  border: none;
-  border-radius: 2px;
-  box-shadow: 0 2px 10px rgba(40, 22, 6, 0.22);
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease;
-}
-
-.theme-sutta .card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(40, 22, 6, 0.3);
 }
 
 .home__search {
@@ -899,6 +801,12 @@ a {
   color: var(--muted);
 }
 
+/* sutta.stream stacks the term over its gloss; every other theme reads them
+ * as one line, separated by a dash. */
+:root:not(.theme-sutta) .definition__term-note::before {
+  content: ' – ';
+}
+
 .definition__sections {
   font-size: 14px;
   overflow: auto;
@@ -1112,120 +1020,6 @@ a {
   }
 }
 
-/* Grouped library index (sutta.stream): search + collections + rows */
-.library {
-  max-width: 720px;
-  margin: 0 auto 50px;
-}
-
-.library__collection {
-  font-size: 15px;
-  font-weight: normal;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  margin: 28px 0 8px;
-  opacity: 0.85;
-}
-
-.library__rows {
-  background: var(--paper);
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.library__row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 12px;
-  padding: 10px 15px;
-  text-decoration: none;
-  color: var(--ink);
-  border-bottom: 1px solid var(--gloss-3);
-}
-
-.library__row:last-child {
-  border-bottom: none;
-}
-
-.library__row:hover {
-  background: var(--highlight);
-}
-
-.library__titles {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  /* min-width: 0 lets the column shrink below a long title word's width
-   * (Pali compounds); without breaking, that word would overflow across
-   * the status chip and reference to the right. */
-  overflow-wrap: break-word;
-}
-
-.library__orig {
-  font-family: var(--font-reading);
-  font-size: 17px;
-}
-
-.library__en {
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.library__meta {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.library__ref {
-  color: var(--muted);
-  font-size: 13px;
-  font-style: italic;
-  white-space: nowrap;
-}
-
-/* Phones: title + chips + reference don't fit side by side without
- * crushing the title, so the meta line moves under the titles. */
-@media (max-width: 600px) {
-  .library__row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 4px;
-  }
-}
-
-.library__read,
-.library__status {
-  font-size: 11px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  border-radius: 3px;
-  padding: 2px 7px;
-  white-space: nowrap;
-}
-
-.library__read {
-  background: var(--accent-strong);
-  color: #fff;
-}
-
-.library__status {
-  border: 1px solid var(--gloss-1);
-  color: var(--muted);
-}
-
-.library__status_ready {
-  border-color: var(--accent);
-  color: var(--accent-strong);
-}
-
-.library__status_failed {
-  border-color: var(--danger);
-  color: var(--danger);
-}
 
 /* Human-translation credit under the reader heading */
 .reader__credit {

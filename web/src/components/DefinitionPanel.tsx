@@ -42,12 +42,20 @@ function Entry(props: { definition: Definition }) {
       )}
       {definition.analysis && (
         <p>
-          <b>Analysis.</b> {definition.analysis}
+          <b>
+            Analysis
+            <span className="definition__stop">.</span>
+          </b>{' '}
+          {definition.analysis}
         </p>
       )}
       {definition.etymology && (
         <p>
-          <b>Etymology.</b> {definition.etymology}
+          <b>
+            Etymology
+            <span className="definition__stop">.</span>
+          </b>{' '}
+          {definition.etymology}
         </p>
       )}
     </div>
@@ -135,12 +143,7 @@ export function DefinitionPanel(props: {
       <div className="definition__panel">
         <div className="definition__term">
           <span className="definition__term-text">{props.word}</span>
-          {props.gloss && (
-            <>
-              {' – '}
-              <span className="definition__term-note">{props.gloss}</span>
-            </>
-          )}
+          {props.gloss && <span className="definition__term-note">{props.gloss}</span>}
         </div>
 
         <div className="definition__sections">

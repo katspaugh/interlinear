@@ -49,8 +49,13 @@ Two layers turn reading into learning:
   browsers that cannot run it, the no-JavaScript **lite mode** below
   (`server/src/lite.ts`).
 - **`web/`** — React 19 + Vite. `useProjection` renders the library, the
-  reader, and the dictionary sidebar; `useSend` issues intents. The design is
-  a faithful port of the original interlinear.io.
+  reader, and the dictionary sidebar; `useSend` issues intents. Each site
+  gets its own skin: `styles.css` is a faithful port of the original
+  interlinear.io, and `theme-sutta.css` is sutta.stream's "design system v1"
+  — a paper ground, Newsreader and Sora (self-hosted in `web/public/fonts`),
+  one saffron accent, and hairlines instead of boxes. Every rule in it is
+  scoped to `:root.theme-sutta`, and **`/design`** is its browsable style
+  guide, built from the same classes the site uses so it cannot drift.
 - **`vendor/intenteffect/`** — vendored IntentEffect packages (not yet on
   npm); see `vendor/intenteffect/UPSTREAM.md`.
 
