@@ -25,8 +25,9 @@
 /* ------------------------------------------------------------------ */
 
 /* Newsreader (everything read) and Sora (everything clicked), self-hosted:
- * no third-party request, and the latin-ext subset carries the full Pali
- * diacritic range (U+1E00–1E9F: ṃ ṭ ḷ ḍ ṅ ṇ, plus ā ī ū ñ in U+0100–017F).
+ * no third-party request. Neither family draws the dotted Pali letters
+ * (ṃ ṁ ṭ ḍ ṇ ṅ ḷ), so our latin-ext files are rebuilt with them added from
+ * each font's own letters and dots — see public/fonts/README.md.
  * Both are variable fonts, one file per subset per style — the weight axis
  * covers the whole range this design uses. SIL Open Font License 1.1. */
 
