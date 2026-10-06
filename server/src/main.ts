@@ -2,6 +2,7 @@ import http from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createApp } from './app.js'
+import { pingDatabase } from './db.js'
 import { createLiteHandler, liteRedirectFor } from './lite.js'
 import { seed } from './seed.js'
 import { createStaticHandler } from './static.js'
@@ -31,7 +32,13 @@ const serveLite = createLiteHandler(app)
 const server = http.createServer((req, res) => {
   const url = req.url ?? '/'
   if (url === '/healthz') {
-    res.writeHead(200, { 'content-type': 'text/plain' }).end('ok')
+    // Checks the database too, so App Platform restarts an instance whose
+    // pool has wedged instead of leaving it up and unable to serve a page.
+    void pingDatabase(store.pool).then((healthy) => {
+      res
+        .writeHead(healthy ? 200 : 503, { 'content-type': 'text/plain' })
+        .end(healthy ? 'ok' : 'database unreachable')
+    })
     return
   }
   if (url.startsWith('/_intenteffect')) {

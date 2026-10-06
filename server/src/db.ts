@@ -14,6 +14,42 @@ export function normalizeDatabaseUrl(url: string): string {
   return url
 }
 
+/**
+ * A pool that fails loudly instead of hanging. With pg's defaults (no
+ * timeouts, no TCP keepalive) a connection whose socket silently died — DO
+ * restarts managed Postgres for maintenance — keeps its query pending
+ * forever and is never released; once every pooled connection is stuck,
+ * every request waits on the pool forever while the process looks healthy.
+ */
+export function createPool(connectionString: string): pg.Pool {
+  return new pg.Pool({
+    connectionString: normalizeDatabaseUrl(connectionString),
+    // Waiting this long for a free connection means the pool is wedged.
+    connectionTimeoutMillis: 10_000,
+    // Client-side cap: rejects (and releases) a query whose socket went dead.
+    query_timeout: 60_000,
+    // Server-side cap for runaway queries.
+    statement_timeout: 30_000,
+    keepAlive: true,
+    idleTimeoutMillis: 30_000,
+  })
+}
+
+/** For the health check: does a trivial query come back in time? */
+export async function pingDatabase(pool: pg.Pool, timeoutMs = 5_000): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<false>((resolve) => {
+    timer = setTimeout(() => resolve(false), timeoutMs)
+  })
+  try {
+    return await Promise.race([pool.query('select 1').then(() => true), timeout])
+  } catch {
+    return false
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 export async function migrateAppTables(pool: pg.Pool): Promise<void> {
   await pool.query(`
     create table if not exists texts (

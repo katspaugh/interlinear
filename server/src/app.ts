@@ -36,7 +36,7 @@ import {
   type Word,
 } from '@interlinear/shared'
 import { adminTokenConfigured, isAdminToken } from './auth.js'
-import { migrateAppTables, normalizeDatabaseUrl } from './db.js'
+import { createPool, migrateAppTables, normalizeDatabaseUrl } from './db.js'
 
 export interface Ctx {
   /** True for intents issued by the server's own gloss worker. */
@@ -117,7 +117,9 @@ const SUMMARY_SQL = `
 
 export async function createApp(connectionString: string): Promise<InterlinearApp> {
   const store = createPostgresStore({
+    // Still used for the store's own LISTEN connection.
     connectionString: normalizeDatabaseUrl(connectionString),
+    pool: createPool(connectionString),
   })
 
   const migrated = await store.migrate()
